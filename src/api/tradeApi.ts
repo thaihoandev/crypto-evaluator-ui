@@ -13,7 +13,10 @@ import type {
   Timeframe
 } from '../types/trade';
 
-const API_BASE = `${import.meta.env.VITE_API_BASE_URL ?? ''}/api/v1/trades`;
+// In dev: VITE_API_BASE_URL is empty → use window.location.origin (goes through Vite proxy)
+// In prod: VITE_API_BASE_URL is the Render URL → absolute
+const API_ORIGIN = import.meta.env.VITE_API_BASE_URL || window.location.origin;
+const API_BASE = `${API_ORIGIN}/api/v1/trades`;
 
 
 export async function createTrade(request: CreateTradeRequest): Promise<TradeResponse> {
@@ -45,7 +48,7 @@ export async function getTrades(params?: {
   minScore?: number;
   maxScore?: number;
 }): Promise<TradeResponse[]> {
-  const url = new URL(window.location.origin + API_BASE);
+  const url = new URL(API_BASE);
   if (params) {
     if (params.userId) url.searchParams.set('userId', params.userId);
     if (params.symbol) url.searchParams.set('symbol', params.symbol);
@@ -113,7 +116,7 @@ export async function getSymbols(): Promise<CryptoSymbolDto[]> {
 }
 
 export async function getPredictionBacktest(from?: string, to?: string): Promise<PredictionBacktestReportDto> {
-  const url = new URL(window.location.origin + `${API_BASE}/predictions/backtest`);
+  const url = new URL(`${API_BASE}/predictions/backtest`);
   if (from) url.searchParams.set('from', from);
   if (to) url.searchParams.set('to', to);
 
@@ -126,7 +129,7 @@ export async function getPredictionBacktest(from?: string, to?: string): Promise
 }
 
 export async function analyzeMarket(symbol: string, timeframe: Timeframe = 'H1'): Promise<MarketAnalysisResponseDto> {
-  const url = new URL(window.location.origin + `${API_BASE}/analyze/${encodeURIComponent(symbol)}`);
+  const url = new URL(`${API_BASE}/analyze/${encodeURIComponent(symbol)}`);
   url.searchParams.set('timeframe', timeframe);
 
   const res = await fetch(url.toString());

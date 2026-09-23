@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { TradeResponse, CloseTradeRequest } from '../types/trade';
 import { BookOpen, CheckCircle, XCircle, Clock, RefreshCw } from 'lucide-react';
+import { useLanguage } from '../context/LanguageContext';
 
 interface TradeJournalTableProps {
   trades: TradeResponse[];
@@ -14,6 +15,8 @@ export const TradeJournalTable: React.FC<TradeJournalTableProps> = ({
   onCloseTrade,
   onSelectTrade
 }) => {
+  const { t } = useLanguage();
+
   const [selectedTradeForClose, setSelectedTradeForClose] = useState<TradeResponse | null>(null);
   const [exitPrice, setExitPrice] = useState<number>(0);
   const [exitReason, setExitReason] = useState<string>('Take Profit');
@@ -58,7 +61,7 @@ export const TradeJournalTable: React.FC<TradeJournalTableProps> = ({
     >
       <div className="card-title">
         <BookOpen size={18} color="#06b6d4" />
-        Trade Journal & Evaluation History ({trades.length})
+        {t.journal.title} ({trades.length})
       </div>
 
       {trades.length === 0 ? (
@@ -71,32 +74,32 @@ export const TradeJournalTable: React.FC<TradeJournalTableProps> = ({
             <thead>
               <tr>
                 <th>Date & Time</th>
-                <th>Symbol</th>
-                <th>Direction</th>
-                <th>Entry Price</th>
-                <th>Stop Loss / Take Profit</th>
-                <th>Score</th>
-                <th>Status</th>
-                <th>Actions</th>
+                <th>{t.journal.symbolCol}</th>
+                <th>{t.journal.directionCol}</th>
+                <th>{t.journal.entryCol}</th>
+                <th>{t.journal.slCol} / {t.journal.tpCol}</th>
+                <th>{t.journal.scoreCol}</th>
+                <th>{t.journal.statusCol}</th>
+                <th>{t.journal.actionsCol}</th>
               </tr>
             </thead>
             <tbody>
               <AnimatePresence>
-                {trades.map((t, idx) => {
-                  const isLong = t.direction === 'Long';
+                {trades.map((tr, idx) => {
+                  const isLong = tr.direction === 'Long';
 
                   return (
                     <motion.tr
-                      key={t.id}
+                      key={tr.id}
                       initial={{ opacity: 0, x: -10 }}
                       animate={{ opacity: 1, x: 0 }}
                       exit={{ opacity: 0, x: 10 }}
                       transition={{ duration: 0.25, delay: idx * 0.04 }}
                     >
                       <td style={{ color: '#94a3b8', fontSize: '0.8rem', fontFamily: 'JetBrains Mono, monospace' }}>
-                        {new Date(t.createdAt).toLocaleDateString()} {new Date(t.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        {new Date(tr.createdAt).toLocaleDateString()} {new Date(tr.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       </td>
-                      <td style={{ fontWeight: 800, color: '#f8fafc' }}>{t.symbol}</td>
+                      <td style={{ fontWeight: 800, color: '#f8fafc' }}>{tr.symbol}</td>
                       <td>
                         <span style={{
                           color: isLong ? '#10b981' : '#f43f5e',
@@ -106,22 +109,22 @@ export const TradeJournalTable: React.FC<TradeJournalTableProps> = ({
                           fontWeight: 800,
                           fontSize: '0.78rem'
                         }}>
-                          {t.direction.toUpperCase()}
+                          {tr.direction.toUpperCase()}
                         </span>
                       </td>
-                      <td style={{ fontWeight: 700, fontFamily: 'JetBrains Mono, monospace' }}>${formatPrice(t.entryPrice)}</td>
+                      <td style={{ fontWeight: 700, fontFamily: 'JetBrains Mono, monospace' }}>${formatPrice(tr.entryPrice)}</td>
                       <td style={{ fontSize: '0.8rem', color: '#94a3b8', fontFamily: 'JetBrains Mono, monospace' }}>
-                        <span style={{ color: '#f43f5e' }}>${formatPrice(t.stopLoss)}</span> /{' '}
-                        <span style={{ color: '#10b981' }}>${formatPrice(t.takeProfit)}</span>
+                        <span style={{ color: '#f43f5e' }}>${formatPrice(tr.stopLoss)}</span> /{' '}
+                        <span style={{ color: '#10b981' }}>${formatPrice(tr.takeProfit)}</span>
                       </td>
                       <td>
-                        {t.latestScore !== undefined ? (
+                        {tr.latestScore !== undefined ? (
                           <span style={{
                             fontWeight: 800,
                             fontFamily: 'JetBrains Mono, monospace',
-                            color: t.latestScore >= 75 ? '#10b981' : t.latestScore >= 60 ? '#06b6d4' : '#f59e0b'
+                            color: tr.latestScore >= 75 ? '#10b981' : tr.latestScore >= 60 ? '#06b6d4' : '#f59e0b'
                           }}>
-                            {t.latestScore.toFixed(1)}
+                            {tr.latestScore.toFixed(1)}
                           </span>
                         ) : (
                           <span style={{ color: '#64748b' }}>Unrated</span>
@@ -134,10 +137,10 @@ export const TradeJournalTable: React.FC<TradeJournalTableProps> = ({
                           gap: '0.3rem',
                           fontSize: '0.78rem',
                           fontWeight: 700,
-                          color: t.status === 'Closed' ? '#10b981' : t.status === 'Cancelled' ? '#f43f5e' : '#06b6d4'
+                          color: tr.status === 'Closed' ? '#10b981' : tr.status === 'Cancelled' ? '#f43f5e' : '#06b6d4'
                         }}>
-                          {t.status === 'Closed' ? <CheckCircle size={14} /> : t.status === 'Cancelled' ? <XCircle size={14} /> : <Clock size={14} />}
-                          {t.status}
+                          {tr.status === 'Closed' ? <CheckCircle size={14} /> : tr.status === 'Cancelled' ? <XCircle size={14} /> : <Clock size={14} />}
+                          {tr.status === 'Closed' ? t.journal.statusClosed : tr.status === 'Open' ? t.journal.statusOpen : tr.status}
                         </span>
                       </td>
                       <td>
@@ -146,7 +149,7 @@ export const TradeJournalTable: React.FC<TradeJournalTableProps> = ({
                             whileHover={{ scale: 1.05 }}
                             whileTap={{ scale: 0.95 }}
                             type="button"
-                            onClick={() => onSelectTrade(t.id)}
+                            onClick={() => onSelectTrade(tr.id)}
                             style={{
                               background: 'rgba(6, 182, 212, 0.1)',
                               border: '1px solid rgba(6, 182, 212, 0.3)',
@@ -162,15 +165,15 @@ export const TradeJournalTable: React.FC<TradeJournalTableProps> = ({
                             }}
                           >
                             <RefreshCw size={12} />
-                            Inspect
+                            {t.journal.evaluateBtn}
                           </motion.button>
 
-                          {t.status !== 'Closed' && (
+                          {tr.status !== 'Closed' && (
                             <motion.button
                               whileHover={{ scale: 1.05 }}
                               whileTap={{ scale: 0.95 }}
                               type="button"
-                              onClick={() => handleOpenCloseModal(t)}
+                              onClick={() => handleOpenCloseModal(tr)}
                               style={{
                                 background: 'rgba(16, 185, 129, 0.1)',
                                 border: '1px solid rgba(16, 185, 129, 0.3)',
@@ -182,7 +185,7 @@ export const TradeJournalTable: React.FC<TradeJournalTableProps> = ({
                                 cursor: 'pointer'
                               }}
                             >
-                              Close Entry
+                              {t.journal.closeBtn}
                             </motion.button>
                           )}
                         </div>
@@ -203,21 +206,30 @@ export const TradeJournalTable: React.FC<TradeJournalTableProps> = ({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="modal-overlay"
+            style={{
+              position: 'fixed',
+              inset: 0,
+              background: 'rgba(0, 0, 0, 0.75)',
+              backdropFilter: 'blur(4px)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              zIndex: 1000
+            }}
           >
             <motion.div
-              initial={{ scale: 0.9, opacity: 0, y: 15 }}
-              animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.9, opacity: 0, y: 15 }}
-              transition={{ type: 'spring', stiffness: 300, damping: 25 }}
-              className="modal-content"
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+              className="card"
+              style={{ width: '420px', maxWidth: '90%' }}
             >
-              <h3 style={{ fontSize: '1.1rem', fontWeight: 800, marginBottom: '1rem', color: '#f8fafc' }}>
-                Close Trade Entry ({selectedTradeForClose.symbol})
+              <h3 style={{ fontFamily: 'Outfit, sans-serif', fontSize: '1.2rem', fontWeight: 800, marginBottom: '1rem' }}>
+                {t.journal.closeModalTitle} ({selectedTradeForClose.symbol})
               </h3>
               <form onSubmit={handleConfirmClose}>
                 <div className="form-group">
-                  <label className="form-label">Exit Price ($)</label>
+                  <label className="form-label">{t.journal.closePrice}</label>
                   <input
                     type="number"
                     step="any"
@@ -229,60 +241,44 @@ export const TradeJournalTable: React.FC<TradeJournalTableProps> = ({
                 </div>
 
                 <div className="form-group">
-                  <label className="form-label">Exit Reason</label>
+                  <label className="form-label">Reason</label>
                   <select
                     className="form-select"
                     value={exitReason}
                     onChange={(e) => setExitReason(e.target.value)}
                   >
-                    <option value="Take Profit">Take Profit (Hit TP)</option>
-                    <option value="Stop Loss">Stop Loss (Hit SL)</option>
+                    <option value="Take Profit">Take Profit</option>
+                    <option value="Stop Loss">Stop Loss</option>
                     <option value="Manual Exit">Manual Exit</option>
-                    <option value="Trailing Stop">Trailing Stop</option>
                   </select>
                 </div>
 
                 <div className="form-group">
-                  <label className="form-label">Journal Notes</label>
-                  <textarea
+                  <label className="form-label">Notes</label>
+                  <input
+                    type="text"
                     className="form-input"
-                    style={{ height: '80px', resize: 'vertical' }}
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
                     placeholder="Optional exit notes..."
                   />
                 </div>
 
-                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem', marginTop: '1.25rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '1.25rem' }}>
                   <button
                     type="button"
                     onClick={() => setSelectedTradeForClose(null)}
-                    style={{
-                      background: 'transparent',
-                      border: '1px solid rgba(255, 255, 255, 0.1)',
-                      color: '#94a3b8',
-                      padding: '0.5rem 1rem',
-                      borderRadius: '6px',
-                      fontWeight: 600,
-                      cursor: 'pointer'
-                    }}
+                    style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.15)', color: '#94a3b8', padding: '0.45rem 1rem', borderRadius: '6px', cursor: 'pointer', fontWeight: 700 }}
                   >
-                    Cancel
+                    {t.journal.closeCancel}
                   </button>
                   <button
                     type="submit"
                     disabled={isSubmittingClose}
-                    style={{
-                      background: '#10b981',
-                      border: 'none',
-                      color: '#ffffff',
-                      padding: '0.5rem 1.25rem',
-                      borderRadius: '6px',
-                      fontWeight: 800,
-                      cursor: 'pointer'
-                    }}
+                    className="btn-submit"
+                    style={{ padding: '0.45rem 1.25rem' }}
                   >
-                    {isSubmittingClose ? 'Closing...' : 'Confirm Close Entry'}
+                    {isSubmittingClose ? 'Closing...' : t.journal.closeConfirm}
                   </button>
                 </div>
               </form>

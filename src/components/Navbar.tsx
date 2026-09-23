@@ -1,6 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Activity, ShieldCheck, Cpu, LayoutDashboard, Target, BookOpen, FlaskConical, Sparkles } from 'lucide-react';
+import { Activity, ShieldCheck, Cpu, LayoutDashboard, Target, BookOpen, FlaskConical, Sparkles, Languages } from 'lucide-react';
+import { useLanguage } from '../context/LanguageContext';
 
 export type WorkspaceTab = 'terminal' | 'analyzer' | 'inspector' | 'backtest' | 'journal';
 
@@ -17,14 +18,15 @@ export const Navbar: React.FC<NavbarProps> = ({
   setActiveTab,
   journalCount
 }) => {
-  const tabs = [
-    { id: 'terminal', label: 'Trading Desk & Chart', icon: LayoutDashboard },
-    { id: 'analyzer', label: 'AI Setup Finder', icon: Sparkles },
-    { id: 'inspector', label: 'Score & Rule Inspector', icon: Target },
-    { id: 'backtest', label: 'Prediction Backtest', icon: FlaskConical },
-    { id: 'journal', label: `Journal (${journalCount})`, icon: BookOpen }
-  ] as const;
+  const { language, setLanguage, t } = useLanguage();
 
+  const tabs = [
+    { id: 'terminal', label: t.nav.tabTerminal, icon: LayoutDashboard },
+    { id: 'analyzer', label: t.nav.tabAnalyzer, icon: Sparkles },
+    { id: 'inspector', label: t.nav.tabInspector, icon: Target },
+    { id: 'backtest', label: t.nav.tabBacktest, icon: FlaskConical },
+    { id: 'journal', label: `${t.nav.tabJournal} (${journalCount})`, icon: BookOpen }
+  ] as const;
 
   return (
     <header className="header-glass">
@@ -55,7 +57,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               Crypto Trade <span style={{ color: '#06b6d4' }}>Evaluator</span>
             </h1>
             <p style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 600, letterSpacing: '0.02em' }}>
-              Quant Analysis • Risk Engine • Monte Carlo Predictor
+              {t.nav.brandSub}
             </p>
           </div>
         </motion.div>
@@ -96,8 +98,64 @@ export const Navbar: React.FC<NavbarProps> = ({
           })}
         </div>
 
-        {/* Right Status Pills */}
+        {/* Right Status & Language Controls */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          {/* Language Selector Toggle */}
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            background: '#090d16',
+            border: '1px solid rgba(255, 255, 255, 0.12)',
+            padding: '0.2rem',
+            borderRadius: '9999px',
+            fontSize: '0.75rem',
+            fontWeight: 700
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', padding: '0 0.4rem', color: '#64748b' }}>
+              <Languages size={14} />
+            </div>
+            <button
+              type="button"
+              onClick={() => setLanguage('vi')}
+              style={{
+                background: language === 'vi' ? '#06b6d4' : 'transparent',
+                color: language === 'vi' ? '#ffffff' : '#94a3b8',
+                border: 'none',
+                padding: '0.25rem 0.6rem',
+                borderRadius: '9999px',
+                cursor: 'pointer',
+                fontWeight: 700,
+                fontSize: '0.72rem',
+                transition: 'all 0.2s ease',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.25rem'
+              }}
+            >
+              🇻🇳 VI
+            </button>
+            <button
+              type="button"
+              onClick={() => setLanguage('en')}
+              style={{
+                background: language === 'en' ? '#06b6d4' : 'transparent',
+                color: language === 'en' ? '#ffffff' : '#94a3b8',
+                border: 'none',
+                padding: '0.25rem 0.6rem',
+                borderRadius: '9999px',
+                cursor: 'pointer',
+                fontWeight: 700,
+                fontSize: '0.72rem',
+                transition: 'all 0.2s ease',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.25rem'
+              }}
+            >
+              🇺🇸 EN
+            </button>
+          </div>
+
           <div style={{
             display: 'flex',
             alignItems: 'center',
@@ -110,7 +168,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             fontWeight: 700
           }}>
             <ShieldCheck size={14} color="#10b981" />
-            <span style={{ color: '#94a3b8' }}>Engine Ready</span>
+            <span style={{ color: '#94a3b8' }}>{t.nav.engineReady}</span>
           </div>
 
           <motion.div
@@ -130,7 +188,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           >
             <Activity size={14} color={apiStatus === 'online' ? '#10b981' : apiStatus === 'offline' ? '#f43f5e' : '#f59e0b'} />
             <span style={{ textTransform: 'capitalize', color: apiStatus === 'online' ? '#10b981' : apiStatus === 'offline' ? '#f43f5e' : '#f59e0b' }}>
-              API {apiStatus}
+              {apiStatus === 'online' ? t.nav.apiOnline : apiStatus === 'offline' ? t.nav.apiOffline : t.nav.apiChecking}
             </span>
           </motion.div>
         </div>

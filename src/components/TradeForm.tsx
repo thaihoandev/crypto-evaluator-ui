@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import type { TradeDirection, Timeframe, CreateTradeRequest, CryptoSymbolDto } from '../types/trade';
 import { getTicker, getSymbols } from '../api/tradeApi';
 import { ArrowUpRight, ArrowDownRight, Play, Calculator, AlertCircle, Search, RefreshCw } from 'lucide-react';
+import { useLanguage } from '../context/LanguageContext';
 
 interface TradeFormProps {
   onSubmit: (request: CreateTradeRequest) => void;
@@ -56,6 +57,8 @@ export const TradeForm: React.FC<TradeFormProps> = ({
   activeStopLoss,
   activeTakeProfit
 }) => {
+  const { t } = useLanguage();
+
   const [symbol, setSymbol] = useState(activeSymbol || 'BTCUSDT');
   const [searchQuery, setSearchQuery] = useState(activeSymbol || 'BTCUSDT');
   const [availableSymbols, setAvailableSymbols] = useState<CryptoSymbolDto[]>(FALLBACK_PAIRS);
@@ -223,7 +226,7 @@ export const TradeForm: React.FC<TradeFormProps> = ({
       <div className="card-title" style={{ justifyContent: 'space-between' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
           <Calculator size={18} color="#06b6d4" />
-          Trade Setup Parameters
+          {t.tradeForm.title}
         </div>
         <motion.button
           type="button"
@@ -246,14 +249,14 @@ export const TradeForm: React.FC<TradeFormProps> = ({
           }}
         >
           <RefreshCw size={12} className={isFetchingPrice ? 'spinner' : ''} />
-          {isFetchingPrice ? 'Fetching...' : 'Fetch Live Price'}
+          {isFetchingPrice ? t.tradeForm.evaluating : t.tradeForm.fetchLivePrice}
         </motion.button>
       </div>
 
       <form onSubmit={handleSubmit}>
         {/* Direction Toggle */}
         <div className="form-group">
-          <label className="form-label">Position Direction</label>
+          <label className="form-label">{t.tradeForm.direction}</label>
           <div className="direction-toggle">
             <motion.button
               type="button"
@@ -262,7 +265,7 @@ export const TradeForm: React.FC<TradeFormProps> = ({
               onClick={() => handleDirectionChange('Long')}
             >
               <ArrowUpRight size={16} style={{ display: 'inline', marginRight: 4, verticalAlign: 'middle' }} />
-              LONG
+              {t.tradeForm.long}
             </motion.button>
             <motion.button
               type="button"
@@ -271,7 +274,7 @@ export const TradeForm: React.FC<TradeFormProps> = ({
               onClick={() => handleDirectionChange('Short')}
             >
               <ArrowDownRight size={16} style={{ display: 'inline', marginRight: 4, verticalAlign: 'middle' }} />
-              SHORT
+              {t.tradeForm.short}
             </motion.button>
           </div>
         </div>
@@ -279,8 +282,8 @@ export const TradeForm: React.FC<TradeFormProps> = ({
         {/* Searchable Dropdown for Symbol */}
         <div className="form-group" ref={dropdownRef} style={{ position: 'relative' }}>
           <label className="form-label">
-            Crypto Pair (Binance Live Ticker)
-            {isFetchingPrice && <span style={{ color: '#06b6d4', textTransform: 'none' }}>Fetching live price...</span>}
+            {t.tradeForm.searchCoinLabel}
+            {isFetchingPrice && <span style={{ color: '#06b6d4', textTransform: 'none', marginLeft: '0.5rem' }}>...</span>}
           </label>
           <div className="search-dropdown-container">
             <div style={{ position: 'relative' }}>
@@ -297,7 +300,7 @@ export const TradeForm: React.FC<TradeFormProps> = ({
                   setSymbol(val);
                   setIsDropdownOpen(true);
                 }}
-                placeholder="Search crypto pair (e.g. BTCUSDT, SOLUSDT...)"
+                placeholder={t.tradeForm.searchPlaceholder}
                 required
               />
               <Search size={16} color="#64748b" style={{ position: 'absolute', left: '0.8rem', top: '50%', transform: 'translateY(-50%)' }} />
@@ -314,7 +317,7 @@ export const TradeForm: React.FC<TradeFormProps> = ({
                 >
                   {filteredPairs.length === 0 ? (
                     <div style={{ padding: '0.75rem', fontSize: '0.8rem', color: '#64748b', textAlign: 'center' }}>
-                      Custom Symbol: "{searchQuery.toUpperCase()}"
+                      Symbol: "{searchQuery.toUpperCase()}"
                     </div>
                   ) : (
                     filteredPairs.map((p) => (
@@ -340,7 +343,7 @@ export const TradeForm: React.FC<TradeFormProps> = ({
         {/* Timeframe & Leverage */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
           <div className="form-group">
-            <label className="form-label">Timeframe</label>
+            <label className="form-label">{t.tradeForm.timeframe}</label>
             <select
               className="form-select"
               value={timeframe}
@@ -357,7 +360,7 @@ export const TradeForm: React.FC<TradeFormProps> = ({
           </div>
 
           <div className="form-group">
-            <label className="form-label">Leverage (x)</label>
+            <label className="form-label">{t.tradeForm.leverage}</label>
             <input
               type="number"
               className="form-input"
@@ -373,7 +376,7 @@ export const TradeForm: React.FC<TradeFormProps> = ({
         {/* Entry, Stop Loss, Take Profit */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.75rem' }}>
           <div className="form-group">
-            <label className="form-label">Entry Price</label>
+            <label className="form-label">{t.tradeForm.entryPrice}</label>
             <input
               type="number"
               step="any"
@@ -385,7 +388,7 @@ export const TradeForm: React.FC<TradeFormProps> = ({
           </div>
 
           <div className="form-group">
-            <label className="form-label">Stop Loss</label>
+            <label className="form-label">{t.tradeForm.stopLoss}</label>
             <input
               type="number"
               step="any"
@@ -398,7 +401,7 @@ export const TradeForm: React.FC<TradeFormProps> = ({
           </div>
 
           <div className="form-group">
-            <label className="form-label">Take Profit</label>
+            <label className="form-label">{t.tradeForm.takeProfit}</label>
             <input
               type="number"
               step="any"
@@ -413,7 +416,7 @@ export const TradeForm: React.FC<TradeFormProps> = ({
 
         {/* Quick R:R Preset Buttons */}
         <div style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <span style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 700 }}>AUTO SL/TP TARGET PRESETS:</span>
+          <span style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 700 }}>{t.tradeForm.quickPresets}</span>
           <div className="rr-presets">
             <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} type="button" className="btn-rr" onClick={() => applyTargetsByRR(entryPrice, direction, 1.5)}>1:1.5 R:R</motion.button>
             <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} type="button" className="btn-rr" onClick={() => applyTargetsByRR(entryPrice, direction, 2.0)}>1:2 R:R</motion.button>
@@ -424,7 +427,7 @@ export const TradeForm: React.FC<TradeFormProps> = ({
         {/* Account Balance & Risk Percent */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
           <div className="form-group">
-            <label className="form-label">Balance ($)</label>
+            <label className="form-label">{t.tradeForm.accountBalance}</label>
             <input
               type="number"
               step="any"
@@ -436,7 +439,7 @@ export const TradeForm: React.FC<TradeFormProps> = ({
           </div>
 
           <div className="form-group">
-            <label className="form-label">Risk Percent (%)</label>
+            <label className="form-label">{t.tradeForm.riskPercent}</label>
             <input
               type="number"
               step="0.1"
@@ -453,11 +456,11 @@ export const TradeForm: React.FC<TradeFormProps> = ({
         {/* Live Risk Metrics Bar */}
         <div className="metrics-live-bar">
           <div className="metric-item">
-            <div className="metric-label">Risk Amount</div>
+            <div className="metric-label">{t.tradeForm.riskAmount}</div>
             <div className="metric-value">${liveMetrics.riskAmount.toLocaleString(undefined, { maximumFractionDigits: 2 })}</div>
           </div>
           <div className="metric-item">
-            <div className="metric-label">R : R</div>
+            <div className="metric-label">{t.tradeForm.rrRatio}</div>
             <div className="metric-value" style={{ color: liveMetrics.rrRatio < 1 ? '#f43f5e' : liveMetrics.rrRatio >= 2 ? '#10b981' : '#06b6d4' }}>
               1 : {liveMetrics.rrRatio.toFixed(2)}
             </div>
@@ -492,12 +495,12 @@ export const TradeForm: React.FC<TradeFormProps> = ({
           {isLoading ? (
             <>
               <div className="spinner" />
-              Fetching Market Data & Evaluating...
+              {t.tradeForm.evaluating}
             </>
           ) : (
             <>
               <Play size={18} fill="currentColor" />
-              EVALUATE TRADE SETUP
+              {t.tradeForm.submitBtn}
             </>
           )}
         </motion.button>

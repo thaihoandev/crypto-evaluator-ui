@@ -2,6 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import type { TradePredictionDto } from '../types/trade';
 import { Dna, TrendingUp, Info, GitBranch, ShieldCheck, ShieldAlert, Database, AlertTriangle } from 'lucide-react';
+import { useLanguage } from '../context/LanguageContext';
 
 interface MonteCarloWidgetProps {
   prediction: TradePredictionDto;
@@ -26,6 +27,8 @@ const CONFIDENCE_COLORS: Record<string, { bg: string; border: string; text: stri
 };
 
 export const MonteCarloWidget: React.FC<MonteCarloWidgetProps> = ({ prediction }) => {
+  const { t } = useLanguage();
+
   const win    = prediction.winProbability;
   const loss   = prediction.lossProbability;
   const noHit  = prediction.noHitProbability;
@@ -61,7 +64,7 @@ export const MonteCarloWidget: React.FC<MonteCarloWidgetProps> = ({ prediction }
       <div className="card-title" style={{ justifyContent: 'space-between' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
           <Dna size={18} color="#10b981" />
-          Monte Carlo Simulation Prediction
+          {t.monteCarlo.title}
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
           {/* Confidence Badge */}
@@ -91,7 +94,7 @@ export const MonteCarloWidget: React.FC<MonteCarloWidgetProps> = ({ prediction }
             className="r-multiple-badge"
           >
             <TrendingUp size={14} />
-            Expectancy: {prediction.expectedRMultiple >= 0 ? '+' : ''}{prediction.expectedRMultiple.toFixed(2)}R
+            E[R]: {prediction.expectedRMultiple >= 0 ? '+' : ''}{prediction.expectedRMultiple.toFixed(2)}R
           </motion.div>
         </div>
       </div>
@@ -100,7 +103,7 @@ export const MonteCarloWidget: React.FC<MonteCarloWidgetProps> = ({ prediction }
       <div className="prediction-box">
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.5rem', textAlign: 'center' }}>
           <div>
-            <div style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 700, textTransform: 'uppercase' }}>WIN PROBABILITY</div>
+            <div style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 700, textTransform: 'uppercase' }}>{t.monteCarlo.winRate}</div>
             <motion.div
               initial={{ scale: 0.7, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
@@ -111,7 +114,7 @@ export const MonteCarloWidget: React.FC<MonteCarloWidgetProps> = ({ prediction }
             </motion.div>
           </div>
           <div>
-            <div style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 700, textTransform: 'uppercase' }}>LOSS PROBABILITY</div>
+            <div style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 700, textTransform: 'uppercase' }}>{t.monteCarlo.lossRate}</div>
             <motion.div
               initial={{ scale: 0.7, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
@@ -122,7 +125,7 @@ export const MonteCarloWidget: React.FC<MonteCarloWidgetProps> = ({ prediction }
             </motion.div>
           </div>
           <div>
-            <div style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 700, textTransform: 'uppercase' }}>NO TOUCH / EXPIRE</div>
+            <div style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 700, textTransform: 'uppercase' }}>{t.monteCarlo.noHitRate}</div>
             <motion.div
               initial={{ scale: 0.7, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
@@ -186,11 +189,10 @@ export const MonteCarloWidget: React.FC<MonteCarloWidgetProps> = ({ prediction }
 
           {/* Factor list breakdown */}
           <div style={{ fontSize: '0.7rem', color: '#94a3b8', fontWeight: 700, marginBottom: '0.35rem' }}>
-            Confidence Assessment Factors:
+            Assessment Factors:
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
             {conf.factors.map((f, i) => {
-              // Icon tag classification
               let categoryTag = 'Factor';
               if (f.toLowerCase().includes('candle')) categoryTag = 'Candle Count';
               else if (f.toLowerCase().includes('recent') || f.toLowerCase().includes('old')) categoryTag = 'Data Recency';
@@ -234,7 +236,7 @@ export const MonteCarloWidget: React.FC<MonteCarloWidgetProps> = ({ prediction }
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.55rem', fontSize: '0.7rem', color: '#64748b', fontWeight: 700, textTransform: 'uppercase' }}>
             <GitBranch size={12} />
-            Scenario Paths — Representative Real Simulations
+            {t.monteCarlo.percentilesTitle}
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.5rem' }}>
             {prediction.scenarioPaths.map((scenario) => {
@@ -302,24 +304,14 @@ export const MonteCarloWidget: React.FC<MonteCarloWidgetProps> = ({ prediction }
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.4rem 0.8rem', fontSize: '0.7rem' }}>
             <div>
-              <span style={{ color: '#64748b' }}>Số nến đã đóng: </span>
-              <strong style={{ color: dq.isSufficient ? '#f8fafc' : '#f43f5e' }}>{dq.closedCandleCount} candles</strong>
+              <span style={{ color: '#64748b' }}>Candles: </span>
+              <strong style={{ color: dq.isSufficient ? '#f8fafc' : '#f43f5e' }}>{dq.closedCandleCount}</strong>
             </div>
             <div>
-              <span style={{ color: '#64748b' }}>Tuổi dữ liệu: </span>
+              <span style={{ color: '#64748b' }}>Data Age: </span>
               <strong style={{ color: dq.isStale ? '#f43f5e' : '#10b981', fontFamily: 'JetBrains Mono, monospace' }}>
                 {formatAge(liveAgeSeconds)}
               </strong>
-            </div>
-            <div>
-              <span style={{ color: '#64748b' }}>Nến đóng cuối: </span>
-              <strong style={{ color: '#cbd5e1' }}>
-                {dq.lastClosedCandleTime ? new Date(dq.lastClosedCandleTime).toLocaleString() : '—'}
-              </strong>
-            </div>
-            <div>
-              <span style={{ color: '#64748b' }}>Nguồn dữ liệu: </span>
-              <strong style={{ color: '#06b6d4' }}>{dq.source || 'Binance Futures API'}</strong>
             </div>
           </div>
         </motion.div>

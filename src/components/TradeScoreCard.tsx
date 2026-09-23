@@ -1,6 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Award } from 'lucide-react';
+import { useLanguage } from '../context/LanguageContext';
 
 interface TradeScoreCardProps {
   score: number;
@@ -8,12 +9,14 @@ interface TradeScoreCardProps {
 }
 
 export const TradeScoreCard: React.FC<TradeScoreCardProps> = ({ score, explanation }) => {
+  const { t } = useLanguage();
+
   const getBadgeClass = (s: number) => {
-    if (s >= 85) return { label: 'Very Strong Setup', className: 'very-strong', color: '#10b981' };
-    if (s >= 70) return { label: 'Strong Setup', className: 'strong', color: '#06b6d4' };
-    if (s >= 55) return { label: 'Moderate Setup', className: 'moderate', color: '#3b82f6' };
-    if (s >= 40) return { label: 'Weak Setup', className: 'weak', color: '#f59e0b' };
-    return { label: 'High Risk Setup', className: 'high-risk', color: '#f43f5e' };
+    if (s >= 85) return { label: t.tradeScore.ratingExcellent, className: 'very-strong', color: '#10b981' };
+    if (s >= 70) return { label: t.tradeScore.ratingGood, className: 'strong', color: '#06b6d4' };
+    if (s >= 55) return { label: t.tradeScore.ratingFair, className: 'moderate', color: '#3b82f6' };
+    if (s >= 40) return { label: t.tradeScore.ratingFair, className: 'weak', color: '#f59e0b' };
+    return { label: t.tradeScore.ratingPoor, className: 'high-risk', color: '#f43f5e' };
   };
 
   const badge = getBadgeClass(score);
@@ -29,7 +32,7 @@ export const TradeScoreCard: React.FC<TradeScoreCardProps> = ({ score, explanati
     >
       <div className="card-title" style={{ width: '100%', justifyContent: 'center' }}>
         <Award size={20} color={badge.color} />
-        Trade Setup Score
+        {t.tradeScore.scoreTitle}
       </div>
 
       <div className="score-gauge-container">

@@ -13,7 +13,7 @@ import type {
   Timeframe
 } from '../types/trade';
 
-const API_BASE = '/api/v1/trades';
+const API_BASE = `${import.meta.env.VITE_API_BASE_URL ?? ''}/api/v1/trades`;
 
 
 export async function createTrade(request: CreateTradeRequest): Promise<TradeResponse> {

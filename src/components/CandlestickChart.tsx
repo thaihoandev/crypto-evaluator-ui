@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useRef } from 'react';
 import type { TradeDirection, Timeframe, MarketSnapshotDto, CandleDto, TradePredictionDto, TrajectoryPointDto, ScenarioPathDto } from '../types/trade';
 import { CandlestickChart as ChartIcon, Clock, Eye, EyeOff } from 'lucide-react';
+import { useLanguage } from '../context/LanguageContext';
 
 interface CandlestickChartProps {
   symbol: string;
@@ -25,6 +26,7 @@ export const CandlestickChart: React.FC<CandlestickChartProps> = ({
   candles = [],
   prediction
 }) => {
+  const { t } = useLanguage();
   const containerRef = useRef<HTMLDivElement>(null);
 
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
@@ -338,7 +340,7 @@ export const CandlestickChart: React.FC<CandlestickChartProps> = ({
       <div className="card-title" style={{ justifyContent: 'space-between', marginBottom: '0.75rem', flexWrap: 'wrap', gap: '0.5rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
           <ChartIcon size={20} color="#06b6d4" />
-          Biểu Đồ Nến Live & Mô Phỏng Monte Carlo ({symbol} • Khung {timeframe})
+          {t.candlestickChart.chartTitle} ({symbol} • {timeframe})
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', fontSize: '0.75rem', fontWeight: 600, flexWrap: 'wrap' }}>
           <span style={{ color: '#06b6d4' }}>● EMA 20 (${snapshot ? formatPrice(snapshot.ema20) : '---'})</span>
@@ -388,7 +390,7 @@ export const CandlestickChart: React.FC<CandlestickChartProps> = ({
             }}
           >
             {showProjection ? <Eye size={12} /> : <EyeOff size={12} />}
-            {showProjection ? 'Hành Lang Monte Carlo: BẬT' : 'Hành Lang: TẮT'}
+            {t.candlestickChart.toggleProjection}: {showProjection ? 'ON' : 'OFF'}
           </button>
         </div>
       </div>

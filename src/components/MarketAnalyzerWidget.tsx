@@ -21,6 +21,7 @@ import type {
   CryptoSymbolDto
 } from '../types/trade';
 import { analyzeMarket, getSymbols } from '../api/tradeApi';
+import { useLanguage } from '../context/LanguageContext';
 
 const FALLBACK_SYMBOLS: CryptoSymbolDto[] = [
   { symbol: 'BTCUSDT', name: 'Bitcoin' },
@@ -54,13 +55,14 @@ export const MarketAnalyzerWidget: React.FC<MarketAnalyzerWidgetProps> = ({
   initialSymbol = 'BTCUSDT',
   initialTimeframe = 'H1'
 }) => {
+  const { t } = useLanguage();
+
   const [symbol, setSymbol] = useState<string>(initialSymbol);
   const [searchQuery, setSearchQuery] = useState<string>(initialSymbol);
   const [timeframe, setTimeframe] = useState<Timeframe>(initialTimeframe);
 
   // Dynamic API symbols list fetched from GET /api/v1/trades/symbols
   const [availableSymbols, setAvailableSymbols] = useState<CryptoSymbolDto[]>([]);
-  const [isSymbolsLoading, setIsSymbolsLoading] = useState<boolean>(true);
 
   const [isDropdownOpen, setIsDropdownOpen] = useState<boolean>(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -86,9 +88,7 @@ export const MarketAnalyzerWidget: React.FC<MarketAnalyzerWidgetProps> = ({
   }, []);
 
   const loadSymbolsFromApi = async () => {
-    setIsSymbolsLoading(true);
     try {
-      // Direct API call to backend GET /api/v1/trades/symbols
       const data = await getSymbols();
       if (data && data.length > 0) {
         setAvailableSymbols(data);
@@ -97,48 +97,15 @@ export const MarketAnalyzerWidget: React.FC<MarketAnalyzerWidgetProps> = ({
       }
     } catch {
       setAvailableSymbols(FALLBACK_SYMBOLS);
-    } finally {
-      setIsSymbolsLoading(false);
     }
   };
 
-  // Dynamic search filtering across hundreds of symbols returned by API
-  const filteredSymbols = useMemo(() => {
-    const query = searchQuery.trim().toLowerCase();
-    const sourceList = availableSymbols.length > 0 ? availableSymbols : FALLBACK_SYMBOLS;
-
-    if (!query) return sourceList.slice(0, 40);
-    return sourceList
-      .filter(
-        (s) =>
-          s.symbol.toLowerCase().includes(query) ||
-          s.name.toLowerCase().includes(query)
-      )
-      .slice(0, 40);
-  }, [availableSymbols, searchQuery]);
-
-  // Dynamic Quick Coin Tags derived from top API symbols
-  const quickCoinTags = useMemo(() => {
-    const sourceList = availableSymbols.length > 0 ? availableSymbols : FALLBACK_SYMBOLS;
-    return sourceList.slice(0, 8).map((s) => s.symbol);
-  }, [availableSymbols]);
-
-  const selectSymbol = (sym: string) => {
-    const formatted = sym.trim().toUpperCase();
-    setSymbol(formatted);
-    setSearchQuery(formatted);
-    setIsDropdownOpen(false);
-  };
-
   const runAnalysis = async (targetSymbol: string, targetTimeframe: Timeframe) => {
-    const cleanSym = targetSymbol.trim().toUpperCase();
-    if (!cleanSym) return;
-
     setIsLoading(true);
     setErrorMessage(null);
     try {
-      const res = await analyzeMarket(cleanSym, targetTimeframe);
-      setAnalysis(res);
+      const result = await analyzeMarket(targetSymbol, targetTimeframe);
+      setAnalysis(result);
     } catch (err: any) {
       setErrorMessage(err.message || 'Không thể thực hiện phân tích thị trường.');
     } finally {
@@ -146,63 +113,72 @@ export const MarketAnalyzerWidget: React.FC<MarketAnalyzerWidgetProps> = ({
     }
   };
 
-  const handleFormSubmit = (e: React.FormEvent) => {
+  const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const finalSym = searchQuery.trim().toUpperCase() || symbol;
-    setSymbol(finalSym);
-    runAnalysis(finalSym, timeframe);
+    const finalSymbol = searchQuery.trim().toUpperCase() || symbol;
+    setSymbol(finalSymbol);
+    setIsDropdownOpen(false);
+    runAnalysis(finalSymbol, timeframe);
   };
 
+  const selectSymbol = (sym: string) => {
+    setSymbol(sym);
+    setSearchQuery(sym);
+    setIsDropdownOpen(false);
+    runAnalysis(sym, timeframe);
+  };
+
+  // Filter pairs for dropdown
+  const filteredSymbols = useMemo(() => {
+    const query = searchQuery.trim().toUpperCase();
+    if (!query) return availableSymbols;
+    return availableSymbols.filter(
+      (s) => s.symbol.includes(query) || s.name.toUpperCase().includes(query)
+    );
+  }, [searchQuery, availableSymbols]);
+
+  const quickCoinTags = useMemo(() => {
+    const defaultList = ['BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'BNBUSDT', 'NEARUSDT', 'PEPEUSDT', 'SUIUSDT'];
+    if (availableSymbols.length === 0) return defaultList;
+    const fromApi = availableSymbols.slice(0, 8).map((s) => s.symbol);
+    return Array.from(new Set([...fromApi, ...defaultList])).slice(0, 8);
+  }, [availableSymbols]);
+
   return (
-    <div className="card" style={{ padding: '1.5rem', marginBottom: '1.5rem' }}>
-      {/* ── Top Header & Input Controls ── */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', flexWrap: 'wrap', gap: '1rem' }}>
+    <div className="card" style={{ padding: '1.5rem' }}>
+      {/* ── Widget Header ── */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem', flexWrap: 'wrap', gap: '0.75rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
           <div style={{
             background: 'linear-gradient(135deg, rgba(6, 182, 212, 0.2), rgba(59, 130, 246, 0.2))',
-            border: '1px solid rgba(6, 182, 212, 0.4)',
-            padding: '0.6rem',
-            borderRadius: '12px',
+            padding: '0.55rem',
+            borderRadius: '10px',
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'center'
+            justifyContent: 'center',
+            border: '1px solid rgba(6, 182, 212, 0.3)'
           }}>
-            <Sparkles size={22} color="#06b6d4" />
+            <Sparkles size={20} color="#06b6d4" />
           </div>
           <div>
             <h2 style={{ fontFamily: 'Outfit, sans-serif', fontSize: '1.25rem', fontWeight: 800, margin: 0, color: '#f8fafc' }}>
-              AI Market Analyzer & Setup Finder
+              {t.marketAnalyzer.title}
             </h2>
-            <p style={{ fontSize: '0.78rem', color: '#94a3b8', margin: 0 }}>
-              Tìm kiếm bất kỳ Cặp Coin nào từ Binance API — Nhấn Nút Phân Tích khi bạn cần
+            <p style={{ fontSize: '0.78rem', color: '#64748b', margin: 0 }}>
+              {t.marketAnalyzer.subtitle}
             </p>
           </div>
         </div>
 
-        {/* Form Search & Timeframe Controls */}
-        <form onSubmit={handleFormSubmit} style={{ display: 'flex', alignItems: 'flex-end', gap: '0.65rem', flexWrap: 'wrap' }}>
-          {/* Dynamic Searchable Symbol Input with Dropdown */}
-          <div ref={dropdownRef} style={{ position: 'relative', width: '240px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.2rem' }}>
-              <label style={{ fontSize: '0.68rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>
-                Tìm Kiếm Coin (API Live)
-              </label>
-              {isSymbolsLoading ? (
-                <span style={{ fontSize: '0.65rem', color: '#06b6d4', display: 'flex', alignItems: 'center', gap: '0.2rem' }}>
-                  <RefreshCw size={10} className="spin" /> Đang tải API...
-                </span>
-              ) : (
-                <span style={{ fontSize: '0.65rem', color: '#10b981', fontWeight: 700 }}>
-                  ⚡ {availableSymbols.length} pairs
-                </span>
-              )}
-            </div>
-
+        {/* Form Controls Header */}
+        <form onSubmit={handleSearchSubmit} style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+          {/* Symbol Searchable Input & Dropdown */}
+          <div ref={dropdownRef} style={{ position: 'relative', width: '220px' }}>
             <div style={{ position: 'relative' }}>
               <input
                 type="text"
                 className="input-field"
-                placeholder="Gõ mã Coin (e.g. PEPE, SOL, SUI...)"
+                placeholder={t.marketAnalyzer.searchPlaceholder}
                 value={searchQuery}
                 onFocus={() => setIsDropdownOpen(true)}
                 onChange={(e) => {
@@ -224,7 +200,7 @@ export const MarketAnalyzerWidget: React.FC<MarketAnalyzerWidgetProps> = ({
               />
             </div>
 
-            {/* Dropdown Suggestions List (Rendered dynamically from API symbols) */}
+            {/* Dropdown Suggestions List */}
             {isDropdownOpen && (
               <div style={{
                 position: 'absolute',
@@ -251,7 +227,7 @@ export const MarketAnalyzerWidget: React.FC<MarketAnalyzerWidgetProps> = ({
                   alignItems: 'center',
                   gap: '0.3rem'
                 }}>
-                  <Globe size={12} /> BINANCE FUTURES API ({availableSymbols.length} COINS)
+                  <Globe size={12} /> BINANCE FUTURES ({availableSymbols.length})
                 </div>
 
                 {filteredSymbols.length > 0 ? (
@@ -284,7 +260,7 @@ export const MarketAnalyzerWidget: React.FC<MarketAnalyzerWidgetProps> = ({
                   ))
                 ) : (
                   <div style={{ padding: '0.75rem', fontSize: '0.78rem', color: '#94a3b8', textAlign: 'center' }}>
-                    Nhấn Enter để gửi phân tích mã <strong>"{searchQuery}"</strong>
+                    Symbol: <strong>"{searchQuery}"</strong>
                   </div>
                 )}
               </div>
@@ -293,7 +269,6 @@ export const MarketAnalyzerWidget: React.FC<MarketAnalyzerWidgetProps> = ({
 
           {/* Timeframe Select */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
-            <label style={{ fontSize: '0.68rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Khung Thời Gian</label>
             <select
               value={timeframe}
               onChange={(e) => setTimeframe(e.target.value as Timeframe)}
@@ -324,22 +299,22 @@ export const MarketAnalyzerWidget: React.FC<MarketAnalyzerWidgetProps> = ({
             {isLoading ? (
               <>
                 <RefreshCw size={16} className="spin" />
-                Đang Phân Tích...
+                {t.marketAnalyzer.analyzing}
               </>
             ) : (
               <>
                 <Sparkles size={16} />
-                Phân Tích & Gợi Ý Setup
+                {t.marketAnalyzer.analyzeBtn}
               </>
             )}
           </button>
         </form>
       </div>
 
-      {/* ── Quick Coin Tags Row (Dynamic from API) ── */}
+      {/* Quick Coin Tags Row */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap', marginBottom: '1.25rem' }}>
         <span style={{ fontSize: '0.7rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', marginRight: '0.2rem' }}>
-          Gợi Ý Nhanh từ API:
+          Pairs:
         </span>
         {quickCoinTags.map((tag) => (
           <button
@@ -382,7 +357,7 @@ export const MarketAnalyzerWidget: React.FC<MarketAnalyzerWidgetProps> = ({
         </div>
       )}
 
-      {/* ── Empty Initial State (Manual Trigger Required) ── */}
+      {/* Empty Initial State */}
       {!analysis && !isLoading && (
         <div style={{
           background: 'rgba(15, 23, 42, 0.4)',
@@ -404,10 +379,10 @@ export const MarketAnalyzerWidget: React.FC<MarketAnalyzerWidgetProps> = ({
             <Bot size={36} color="#06b6d4" />
           </div>
           <h3 style={{ fontFamily: 'Outfit, sans-serif', fontSize: '1.25rem', fontWeight: 800, margin: '0 0 0.4rem 0', color: '#f8fafc' }}>
-            Sẵn Sàng Phân Tích Kèo {symbol} ({timeframe})
+            {symbol} ({timeframe})
           </h3>
           <p style={{ color: '#94a3b8', maxWidth: '480px', fontSize: '0.85rem', lineHeight: 1.5, margin: '0 0 1.5rem 0' }}>
-            Hãy chọn Cặp Coin bất kỳ từ Binance API ở ô tìm kiếm phía trên và nhấn nút <strong>PHÂN TÍCH & GỢI Ý SETUP</strong> để hệ thống quét nến Binance, xác định cản Hỗ trợ / Kháng cự và đưa ra kịch bản tối ưu.
+            {t.marketAnalyzer.subtitle}
           </p>
           <button
             type="button"
@@ -424,7 +399,7 @@ export const MarketAnalyzerWidget: React.FC<MarketAnalyzerWidgetProps> = ({
             }}
           >
             <Zap size={18} />
-            Bắt Đầu Phân Tích {symbol} Bây Giờ
+            {t.marketAnalyzer.analyzeBtn} ({symbol})
           </button>
         </div>
       )}
@@ -434,15 +409,12 @@ export const MarketAnalyzerWidget: React.FC<MarketAnalyzerWidgetProps> = ({
         <div style={{ padding: '3rem 2rem', textAlign: 'center', color: '#64748b' }}>
           <RefreshCw size={32} className="spin" style={{ marginBottom: '1rem', color: '#06b6d4' }} />
           <p style={{ fontSize: '0.95rem', fontWeight: 700, color: '#f8fafc', margin: '0 0 0.3rem 0' }}>
-            Đang quét nến Binance & xác định cản Hỗ trợ/Kháng cự cho {symbol}...
-          </p>
-          <p style={{ fontSize: '0.8rem', color: '#64748b' }}>
-            Đang thực hiện 10,000 lượt mô phỏng đường đi giá ngẫu nhiên bằng Monte Carlo GBM với Fat-Tailed Noise
+            {t.marketAnalyzer.analyzing} ({symbol})...
           </p>
         </div>
       )}
 
-      {/* ── Main Analysis Content (Rendered only after user triggers analysis) ── */}
+      {/* Main Analysis Content */}
       {analysis && !isLoading && (
         <AnimatePresence mode="wait">
           <motion.div
@@ -451,13 +423,13 @@ export const MarketAnalyzerWidget: React.FC<MarketAnalyzerWidgetProps> = ({
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
           >
-            {/* ── Top Recommendation Banner ── */}
-            <RecommendationBanner analysis={analysis} />
+            {/* Top Recommendation Banner */}
+            <RecommendationBanner analysis={analysis} t={t} />
 
-            {/* ── Technical Snapshot Bar ── */}
+            {/* Technical Snapshot Bar */}
             <SnapshotSummaryBar snapshot={analysis.snapshot} />
 
-            {/* ── Dual Setups Comparison Grid (Long vs Short) ── */}
+            {/* Dual Setups Comparison Grid (Long vs Short) */}
             <div style={{
               display: 'grid',
               gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
@@ -470,6 +442,7 @@ export const MarketAnalyzerWidget: React.FC<MarketAnalyzerWidgetProps> = ({
                 timeframe={analysis.timeframe}
                 isRecommended={analysis.recommendation === 'Long'}
                 onApply={() => onApplySetup(analysis.longSetup, analysis.symbol, analysis.timeframe)}
+                t={t}
               />
 
               <SetupCard
@@ -478,6 +451,7 @@ export const MarketAnalyzerWidget: React.FC<MarketAnalyzerWidgetProps> = ({
                 timeframe={analysis.timeframe}
                 isRecommended={analysis.recommendation === 'Short'}
                 onApply={() => onApplySetup(analysis.shortSetup, analysis.symbol, analysis.timeframe)}
+                t={t}
               />
             </div>
           </motion.div>
@@ -488,7 +462,7 @@ export const MarketAnalyzerWidget: React.FC<MarketAnalyzerWidgetProps> = ({
 };
 
 // ── Sub-component: Recommendation Banner ─────────────────────────────────────
-const RecommendationBanner: React.FC<{ analysis: MarketAnalysisResponseDto }> = ({ analysis }) => {
+const RecommendationBanner: React.FC<{ analysis: MarketAnalysisResponseDto; t: any }> = ({ analysis, t }) => {
   const rec = analysis.recommendation;
 
   const recConfig = {
@@ -497,21 +471,21 @@ const RecommendationBanner: React.FC<{ analysis: MarketAnalysisResponseDto }> = 
       border: 'rgba(16, 185, 129, 0.4)',
       text: '#10b981',
       icon: TrendingUp,
-      title: 'KHUYẾN NGHỊ: NÊN ĐẶT LỆNH LONG (BUY)'
+      title: t.marketAnalyzer.statusLong
     },
     Short: {
       bg: 'linear-gradient(135deg, rgba(244, 63, 94, 0.15) 0%, rgba(225, 29, 72, 0.1) 100%)',
       border: 'rgba(244, 63, 94, 0.4)',
       text: '#f43f5e',
       icon: TrendingDown,
-      title: 'KHUYẾN NGHỊ: NÊN ĐẶT LỆNH SHORT (SELL)'
+      title: t.marketAnalyzer.statusShort
     },
     Wait: {
       bg: 'linear-gradient(135deg, rgba(245, 158, 11, 0.15) 0%, rgba(217, 119, 6, 0.1) 100%)',
       border: 'rgba(245, 158, 11, 0.4)',
       text: '#f59e0b',
       icon: ShieldAlert,
-      title: 'KHUYẾN NGHỊ: ĐỨNG NGOÀI (STAND ASIDE / WAIT)'
+      title: t.marketAnalyzer.statusWait
     }
   }[rec];
 
@@ -533,12 +507,12 @@ const RecommendationBanner: React.FC<{ analysis: MarketAnalysisResponseDto }> = 
           </h3>
         </div>
         <div style={{ fontSize: '0.78rem', color: '#94a3b8', fontWeight: 600 }}>
-          {analysis.symbol} • Khung {analysis.timeframe}
+          {analysis.symbol} • {analysis.timeframe}
         </div>
       </div>
 
       <p style={{ fontSize: '0.85rem', color: '#e2e8f0', marginTop: '0.5rem', marginBottom: rec.toLowerCase() === 'wait' && analysis.blockingReasons.length > 0 ? '0.6rem' : 0, lineHeight: 1.4 }}>
-        <strong>Phân tích cơ sở:</strong> {analysis.rationale}
+        <strong>{t.marketAnalyzer.rationale}</strong> {analysis.rationale}
       </p>
 
       {/* Blocking Reasons if Wait */}
@@ -557,7 +531,7 @@ const RecommendationBanner: React.FC<{ analysis: MarketAnalysisResponseDto }> = 
                 fontWeight: 700
               }}
             >
-              ⚠️ {formatBlockerReason(reason)}
+              ⚠️ {reason}
             </span>
           ))}
         </div>
@@ -581,7 +555,7 @@ const SnapshotSummaryBar: React.FC<{ snapshot: any }> = ({ snapshot }) => {
       padding: '0.75rem 1rem'
     }}>
       <div>
-        <div style={{ fontSize: '0.68rem', color: '#64748b', fontWeight: 700 }}>GIÁ HIỆN TẠI</div>
+        <div style={{ fontSize: '0.68rem', color: '#64748b', fontWeight: 700 }}>PRICE</div>
         <div style={{ fontSize: '0.92rem', fontWeight: 800, color: '#06b6d4' }}>
           ${snapshot.currentPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 6 })}
         </div>
@@ -620,7 +594,7 @@ const SnapshotSummaryBar: React.FC<{ snapshot: any }> = ({ snapshot }) => {
       </div>
 
       <div>
-        <div style={{ fontSize: '0.68rem', color: '#64748b', fontWeight: 700 }}>VOLUME RATIO</div>
+        <div style={{ fontSize: '0.68rem', color: '#64748b', fontWeight: 700 }}>VOL RATIO</div>
         <div style={{ fontSize: '0.85rem', fontWeight: 700, color: snapshot.volumeRatio >= 1.2 ? '#10b981' : '#94a3b8' }}>
           {snapshot.volumeRatio.toFixed(2)}x
         </div>
@@ -636,9 +610,10 @@ interface SetupCardProps {
   timeframe: Timeframe;
   isRecommended: boolean;
   onApply: () => void;
+  t: any;
 }
 
-const SetupCard: React.FC<SetupCardProps> = ({ setup, isRecommended, onApply }) => {
+const SetupCard: React.FC<SetupCardProps> = ({ setup, isRecommended, onApply, t }) => {
   const isLong = setup.direction === 'Long';
   const themeColor = isLong ? '#10b981' : '#f43f5e';
   const pred = setup.prediction;
@@ -673,7 +648,7 @@ const SetupCard: React.FC<SetupCardProps> = ({ setup, isRecommended, onApply }) 
           borderRadius: '9999px',
           boxShadow: `0 0 10px ${themeColor}66`
         }}>
-          RECOMMENDED SETUP
+          RECOMMENDED
         </div>
       )}
 
@@ -701,89 +676,80 @@ const SetupCard: React.FC<SetupCardProps> = ({ setup, isRecommended, onApply }) 
               </span>
             )}
           </div>
-
-          <div style={{ fontSize: '1.1rem', fontWeight: 900, color: themeColor }}>
-            Score: {setup.setupScore.toFixed(0)}<span style={{ fontSize: '0.75rem', color: '#64748b' }}>/100</span>
-          </div>
         </div>
 
-        {/* Entry / Zone */}
+        {/* Parameters Grid */}
         <div style={{
-          background: 'rgba(0, 0, 0, 0.25)',
+          display: 'grid',
+          gridTemplateColumns: '1fr 1fr 1fr',
+          gap: '0.5rem',
+          background: 'rgba(0, 0, 0, 0.2)',
           padding: '0.75rem',
           borderRadius: '8px',
           marginBottom: '0.85rem'
         }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78rem', marginBottom: '0.35rem' }}>
-            <span style={{ color: '#94a3b8' }}>Entry Price:</span>
-            <strong style={{ color: '#f8fafc', fontSize: '0.9rem' }}>
-              ${setup.entryPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 6 })}
-            </strong>
-          </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.72rem', color: '#64748b' }}>
-            <span>Vùng Entry Zone:</span>
-            <span>
-              ${setup.entryZoneLow.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 4 })} - ${setup.entryZoneHigh.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 4 })}
-            </span>
-          </div>
-        </div>
-
-        {/* Levels Grid: SL & TP */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.6rem', marginBottom: '0.85rem' }}>
-          {/* Stop Loss */}
-          <div style={{ background: 'rgba(244, 63, 94, 0.08)', border: '1px solid rgba(244, 63, 94, 0.2)', padding: '0.65rem', borderRadius: '8px' }}>
-            <div style={{ fontSize: '0.68rem', fontWeight: 800, color: '#f43f5e' }}>STOP LOSS (SL)</div>
-            <div style={{ fontSize: '0.92rem', fontWeight: 800, color: '#f8fafc', margin: '0.15rem 0' }}>
-              ${setup.stopLoss.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 6 })}
-            </div>
-            <div style={{ fontSize: '0.65rem', color: '#94a3b8' }}>
-              Nguồn: {setup.stopLossSource === 'MarketStructure' ? 'Cấu trúc cản' : 'Biên độ ATR'}
+          <div>
+            <div style={{ fontSize: '0.68rem', color: '#64748b', fontWeight: 700 }}>{t.marketAnalyzer.proposedEntry}</div>
+            <div style={{ fontSize: '0.85rem', fontWeight: 800, color: '#f8fafc' }}>
+              ${setup.entryPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 4 })}
             </div>
           </div>
-
-          {/* Take Profit */}
-          <div style={{ background: 'rgba(16, 185, 129, 0.08)', border: '1px solid rgba(16, 185, 129, 0.2)', padding: '0.65rem', borderRadius: '8px' }}>
-            <div style={{ fontSize: '0.68rem', fontWeight: 800, color: '#10b981' }}>TAKE PROFIT (TP)</div>
-            <div style={{ fontSize: '0.92rem', fontWeight: 800, color: '#f8fafc', margin: '0.15rem 0' }}>
-              ${setup.takeProfit.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 6 })}
+          <div>
+            <div style={{ fontSize: '0.68rem', color: '#64748b', fontWeight: 700 }}>{t.marketAnalyzer.proposedSL}</div>
+            <div style={{ fontSize: '0.85rem', fontWeight: 800, color: '#f43f5e' }}>
+              ${setup.stopLoss.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 4 })}
             </div>
-            <div style={{ fontSize: '0.65rem', color: '#94a3b8' }}>
-              Nguồn: {setup.takeProfitSource === 'MarketStructure' ? 'Cấu trúc cản' : 'Biên độ ATR'}
+          </div>
+          <div>
+            <div style={{ fontSize: '0.68rem', color: '#64748b', fontWeight: 700 }}>{t.marketAnalyzer.proposedTP}</div>
+            <div style={{ fontSize: '0.85rem', fontWeight: 800, color: '#10b981' }}>
+              ${setup.takeProfit.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 4 })}
             </div>
           </div>
         </div>
 
-        {/* Stats Row */}
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(3, 1fr)',
-          gap: '0.4rem',
-          textAlign: 'center',
-          marginBottom: '0.85rem',
-          fontSize: '0.72rem'
-        }}>
-          <div style={{ background: 'rgba(255, 255, 255, 0.03)', padding: '0.4rem', borderRadius: '6px' }}>
-            <div style={{ color: '#64748b' }}>TỶ LỆ R:R</div>
-            <strong style={{ color: '#06b6d4', fontSize: '0.85rem' }}>{setup.riskRewardRatio.toFixed(2)}R</strong>
+        {/* Prediction Metrics Overview */}
+        {pred && (
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            background: 'rgba(6, 182, 212, 0.08)',
+            border: '1px solid rgba(6, 182, 212, 0.2)',
+            padding: '0.6rem 0.75rem',
+            borderRadius: '8px',
+            marginBottom: '0.85rem',
+            fontSize: '0.75rem'
+          }}>
+            <div>
+              <span style={{ color: '#94a3b8' }}>{t.monteCarlo.winRate}: </span>
+              <strong style={{ color: pred.winProbability >= 50 ? '#10b981' : '#f59e0b', fontSize: '0.85rem' }}>
+                {pred.winProbability.toFixed(1)}%
+              </strong>
+            </div>
+            <div>
+              <span style={{ color: '#94a3b8' }}>R:R: </span>
+              <strong style={{ color: '#06b6d4', fontSize: '0.85rem' }}>
+                1:{setup.riskRewardRatio.toFixed(2)}
+              </strong>
+            </div>
+            <div>
+              <span style={{ color: '#94a3b8' }}>E[R]: </span>
+              <strong style={{ color: pred.expectedRMultiple > 0 ? '#10b981' : '#f43f5e', fontSize: '0.85rem' }}>
+                {pred.expectedRMultiple.toFixed(2)}R
+              </strong>
+            </div>
           </div>
+        )}
 
-          <div style={{ background: 'rgba(255, 255, 255, 0.03)', padding: '0.4rem', borderRadius: '6px' }}>
-            <div style={{ color: '#64748b' }}>WIN RATE</div>
-            <strong style={{ color: pred.winProbability >= 50 ? '#10b981' : '#f59e0b', fontSize: '0.85rem' }}>
-              {pred.winProbability.toFixed(1)}%
-            </strong>
-          </div>
-
-          <div style={{ background: 'rgba(255, 255, 255, 0.03)', padding: '0.4rem', borderRadius: '6px' }}>
-            <div style={{ color: '#64748b' }}>EXPECTANCY</div>
-            <strong style={{ color: pred.expectedRMultiple >= 0 ? '#10b981' : '#f43f5e', fontSize: '0.85rem' }}>
-              {pred.expectedRMultiple >= 0 ? '+' : ''}{pred.expectedRMultiple.toFixed(2)}R
-            </strong>
-          </div>
+        {/* Setup Score & Tradable Tag */}
+        <div style={{ fontSize: '0.78rem', color: '#cbd5e1', lineHeight: 1.4, marginBottom: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <span>Score: <strong style={{ color: '#06b6d4' }}>{setup.setupScore.toFixed(0)}/100</strong></span>
+          <span style={{ fontSize: '0.72rem', color: '#94a3b8' }}>Levels: {setup.stopLossSource}</span>
         </div>
       </div>
 
-      {/* Action Button */}
+      {/* Action Button: Apply Setup */}
       <button
         type="button"
         onClick={onApply}
@@ -791,41 +757,23 @@ const SetupCard: React.FC<SetupCardProps> = ({ setup, isRecommended, onApply }) 
         style={{
           width: '100%',
           padding: '0.6rem',
-          fontSize: '0.85rem',
+          fontSize: '0.82rem',
           fontWeight: 800,
-          background: isRecommended
-            ? `linear-gradient(135deg, ${themeColor} 0%, #06b6d4 100%)`
-            : 'rgba(255, 255, 255, 0.08)',
-          color: '#ffffff',
+          background: isRecommended ? themeColor : 'rgba(255, 255, 255, 0.08)',
+          color: isRecommended ? '#ffffff' : '#e2e8f0',
           border: 'none',
           borderRadius: '8px',
+          cursor: 'pointer',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           gap: '0.4rem',
-          cursor: 'pointer',
-          marginTop: '0.5rem'
+          transition: 'all 0.15s ease'
         }}
       >
-        <span>Áp Dụng Setup {isLong ? 'Long' : 'Short'} Này</span>
-        <ArrowRight size={16} />
+        <span>{t.marketAnalyzer.applySetupBtn}</span>
+        <ArrowRight size={14} />
       </button>
     </div>
   );
 };
-
-// Helper translation function for blocker reasons
-function formatBlockerReason(reason: string): string {
-  const map: Record<string, string> = {
-    InsufficientClosedCandles: 'Dữ liệu nến quá ít',
-    StaleMarketData: 'Dữ liệu giá cũ / mất kết nối',
-    LowConfidence: 'Độ tin cậy dự đoán thấp',
-    LowSetupScore: 'Điểm kỹ thuật setup thấp (< 60/100)',
-    LowWinProbability: 'Xác suất thắng Monte Carlo quá thấp',
-    LowExpectedRMultiple: 'Tỷ lệ lợi nhuận kỳ vọng âm',
-    HighNoHitProbability: 'Xác suất không chạm TP/SL quá cao',
-    OutsideEntryZone: 'Giá hiện tại nằm ngoài vùng Entry Zone',
-    PoorMarketStructureRiskReward: 'Tỷ lệ Risk:Reward cản hỗ trợ/kháng cự quá thấp'
-  };
-  return map[reason] || reason;
-}

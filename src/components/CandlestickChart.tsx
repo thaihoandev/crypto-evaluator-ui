@@ -1,6 +1,6 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import type { TradeDirection, Timeframe, MarketSnapshotDto, CandleDto, TradePredictionDto, TrajectoryPointDto, ScenarioPathDto } from '../types/trade';
-import { CandlestickChart as ChartIcon, Layers, Navigation, Clock, GitBranch } from 'lucide-react';
+import { CandlestickChart as ChartIcon, Clock, Eye, EyeOff } from 'lucide-react';
 
 interface CandlestickChartProps {
   symbol: string;
@@ -25,19 +25,24 @@ export const CandlestickChart: React.FC<CandlestickChartProps> = ({
   candles = [],
   prediction
 }) => {
+  const containerRef = useRef<HTMLDivElement>(null);
+
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
   const [hoveredTrajectoryPt, setHoveredTrajectoryPt] = useState<TrajectoryPointDto | null>(null);
-  const [showProjection, setShowProjection] = useState(true);
+  const [hoveredScenarioName, setHoveredScenarioName] = useState<string | null>(null);
+  const [mousePos, setMousePos] = useState<{ x: number; y: number } | null>(null);
+
+  const [showProjection, setShowProjection] = useState(true); // Controls corridor shading
   const [visibleScenarios, setVisibleScenarios] = useState<Record<string, boolean>>({
     Bear: true,
     Base: true,
     Bull: true
   });
 
-  const SCENARIO_STYLES: Record<string, { stroke: string; label: string }> = {
-    Bear: { stroke: '#f43f5e', label: '🐻 Bear' },
-    Base: { stroke: '#f59e0b', label: '📊 Base' },
-    Bull: { stroke: '#10b981', label: '🐂 Bull' }
+  const SCENARIO_STYLES: Record<string, { stroke: string; label: string; nameVi: string; emoji: string; desc: string }> = {
+    Bull: { stroke: '#10b981', label: '🐂 Bull P90', nameVi: 'Kịch Bản Tăng (Bull P90)', emoji: '🐂', desc: 'Phân vị 90% tích cực khi tăng' },
+    Base: { stroke: '#f59e0b', label: '📊 Base P50', nameVi: 'Kịch Bản Cơ Sở (Base P50)', emoji: '📊', desc: 'Trung vị 50% kỳ vọng nhất' },
+    Bear: { stroke: '#f43f5e', label: '🐻 Bear P10', nameVi: 'Kịch Bản Giảm (Bear P10)', emoji: '🐻', desc: 'Phân vị 10% kịch bản xấu nhất' }
   };
 
   const toggleScenario = (name: string) =>
@@ -72,13 +77,13 @@ export const CandlestickChart: React.FC<CandlestickChartProps> = ({
 
   // ─── SVG Constants ──────────────────────────────────────────────
   const SVG_WIDTH = 1000;
-  const SVG_HEIGHT = 400;
+  const SVG_HEIGHT = 420;
   const PRICE_TOP = 25;
-  const PRICE_BOTTOM = 280;
-  const PRICE_HEIGHT = PRICE_BOTTOM - PRICE_TOP; // 255px
-  const VOL_BOTTOM = 345;
+  const PRICE_BOTTOM = 300;
+  const PRICE_HEIGHT = PRICE_BOTTOM - PRICE_TOP; // 275px
+  const VOL_BOTTOM = 365;
   const VOL_MAX_HEIGHT = 45;
-  const TIME_AXIS_Y = 355;
+  const TIME_AXIS_Y = 375;
   const LABEL_AREA_WIDTH = 90;
   const CANDLE_AREA_RIGHT = SVG_WIDTH - LABEL_AREA_WIDTH; // 910
   const PROJECTION_CANDLE_COUNT = 50; // Monte Carlo engine projects 50 candles into the future
@@ -116,7 +121,7 @@ export const CandlestickChart: React.FC<CandlestickChartProps> = ({
     return ticks;
   }, [maxPrice, priceRange]);
 
-  // ─── Proportional Candle Scaling (1 Candle = Equal Physical Width) ─
+  // ─── Proportional Candle Scaling ────────────────────────────────
   const totalCandles = candles ? candles.length : 0;
   const totalSlots   = (totalCandles > 0 ? totalCandles : 60) + PROJECTION_CANDLE_COUNT;
   const slotWidth    = CANDLE_AREA_RIGHT / totalSlots;
@@ -128,7 +133,6 @@ export const CandlestickChart: React.FC<CandlestickChartProps> = ({
 
     const points = prediction?.trajectoryPoints;
     if (!points || points.length === 0) {
-      // Fallback geometric projection curve if not yet evaluated
       const currentPrice = snapshot ? snapshot.currentPrice : entryPrice;
       const startY = getY(currentPrice);
       const targetY = startY;
@@ -152,7 +156,6 @@ export const CandlestickChart: React.FC<CandlestickChartProps> = ({
     const lowerPoints: { x: number; y: number }[] = [];
 
     points.forEach((pt) => {
-      // Each step maps to pt.step * 2 future candles
       const x = startX + (pt.step * 2) * slotWidth;
       const y = getY(pt.price);
       mainPoints.push({ x, y, pt });
@@ -160,22 +163,16 @@ export const CandlestickChart: React.FC<CandlestickChartProps> = ({
       lowerPoints.push({ x, y: getY(pt.lowerBound) });
     });
 
-    // Build SVG Path string for Main Trajectory Line
-    const pathD = mainPoints.reduce((acc, p, idx) => {
-      return idx === 0 ? `M ${p.x} ${p.y}` : `${acc} L ${p.x} ${p.y}`;
-    }, '');
+    const pathD = mainPoints.reduce((acc, p, idx) =>
+      idx === 0 ? `M ${p.x} ${p.y}` : `${acc} L ${p.x} ${p.y}`, '');
 
-    const upperD = upperPoints.reduce((acc, p, idx) => {
-      return idx === 0 ? `M ${p.x} ${p.y}` : `${acc} L ${p.x} ${p.y}`;
-    }, '');
+    const upperD = upperPoints.reduce((acc, p, idx) =>
+      idx === 0 ? `M ${p.x} ${p.y}` : `${acc} L ${p.x} ${p.y}`, '');
 
-    const lowerLineD = lowerPoints.reduce((acc, p, idx) => {
-      return idx === 0 ? `M ${p.x} ${p.y}` : `${acc} L ${p.x} ${p.y}`;
-    }, '');
+    const lowerLineD = lowerPoints.reduce((acc, p, idx) =>
+      idx === 0 ? `M ${p.x} ${p.y}` : `${acc} L ${p.x} ${p.y}`, '');
 
-    const lowerD = [...lowerPoints].reverse().reduce((acc, p) => {
-      return `${acc} L ${p.x} ${p.y}`;
-    }, '');
+    const lowerD = [...lowerPoints].reverse().reduce((acc, p) => `${acc} L ${p.x} ${p.y}`, '');
 
     const corridorD = `${upperD} ${lowerD} Z`;
     const lastPt = points[points.length - 1];
@@ -196,7 +193,84 @@ export const CandlestickChart: React.FC<CandlestickChartProps> = ({
     };
   }, [startX, slotWidth, snapshot, entryPrice, takeProfit, tpY, getY, prediction]);
 
-  // ─── Time Axis Labels Generation (Real-world Timestamps) ─────────
+  // ─── Scenario Summary Calculation for Cards Below Chart ─────────
+  const scenarioSummaryData = useMemo(() => {
+    if (!prediction?.scenarioPaths) return null;
+    const map: Record<string, { price: number; diffPct: number; diffText: string }> = {};
+
+    prediction.scenarioPaths.forEach((sc) => {
+      const lastPt = sc.points[sc.points.length - 1];
+      if (lastPt) {
+        const price = lastPt.price;
+        const diffPct = entryPrice > 0 ? ((price - entryPrice) / entryPrice) * 100 : 0;
+        const diffText = diffPct >= 0 ? `+${diffPct.toFixed(1)}%` : `${diffPct.toFixed(1)}%`;
+        map[sc.name] = { price, diffPct, diffText };
+      }
+    });
+
+    return map;
+  }, [prediction, entryPrice]);
+
+  // ─── Calculate Staggered SVG Label Y Coords to Prevent Overlap ──
+  const scenarioLabelsList = useMemo(() => {
+    if (!prediction?.scenarioPaths) return [];
+    const list: { name: string; rawY: number; labelY: number; endPt: { x: number; y: number }; lastPtData: TrajectoryPointDto; diffText: string }[] = [];
+
+    prediction.scenarioPaths.forEach((scenario) => {
+      if (!visibleScenarios[scenario.name]) return;
+      const pts = scenario.points.map((pt) => ({
+        x: startX + (pt.step * 2) * slotWidth,
+        y: getY(pt.price)
+      }));
+      const endPt = pts[pts.length - 1];
+      const lastPtData = scenario.points[scenario.points.length - 1];
+      if (!endPt || !lastPtData) return;
+
+      const diffPct = entryPrice > 0 ? ((lastPtData.price - entryPrice) / entryPrice) * 100 : 0;
+      const diffText = diffPct >= 0 ? `+${diffPct.toFixed(1)}%` : `${diffPct.toFixed(1)}%`;
+
+      list.push({
+        name: scenario.name,
+        rawY: endPt.y,
+        labelY: endPt.y,
+        endPt,
+        lastPtData,
+        diffText
+      });
+    });
+
+    // Sort by Y position ascending (top of chart to bottom)
+    list.sort((a, b) => a.rawY - b.rawY);
+
+    // Apply anti-collision spacing (min 28px vertical gap)
+    for (let i = 1; i < list.length; i++) {
+      if (list[i].labelY - list[i - 1].labelY < 28) {
+        list[i].labelY = list[i - 1].labelY + 28;
+      }
+    }
+
+    return list;
+  }, [prediction, visibleScenarios, startX, slotWidth, getY, entryPrice]);
+
+  // ─── Extract Scenario Values for Hovered Trajectory Step ─────────
+  const stepScenarioPrices = useMemo(() => {
+    if (!hoveredTrajectoryPt || !prediction?.scenarioPaths) return null;
+    const step = hoveredTrajectoryPt.step;
+    const result: Record<string, { price: number; diffText: string }> = {};
+
+    prediction.scenarioPaths.forEach((sc) => {
+      const pt = sc.points.find((p) => p.step === step);
+      if (pt) {
+        const diffPct = entryPrice > 0 ? ((pt.price - entryPrice) / entryPrice) * 100 : 0;
+        const diffText = diffPct >= 0 ? `+${diffPct.toFixed(1)}%` : `${diffPct.toFixed(1)}%`;
+        result[sc.name] = { price: pt.price, diffText };
+      }
+    });
+
+    return result;
+  }, [hoveredTrajectoryPt, prediction, entryPrice]);
+
+  // ─── Time Axis Labels ───────────────────────────────────────────
   const timeTicks = useMemo(() => {
     const ticks: { x: number; label: string; isProjection: boolean }[] = [];
 
@@ -214,7 +288,6 @@ export const CandlestickChart: React.FC<CandlestickChartProps> = ({
       return `${h}:${m}`;
     };
 
-    // 1. History Candle Ticks (~4 ticks)
     if (candles && candles.length > 0) {
       const step = Math.max(1, Math.floor(candles.length / 4));
       for (let i = 0; i < candles.length - 1; i += step) {
@@ -225,10 +298,7 @@ export const CandlestickChart: React.FC<CandlestickChartProps> = ({
           isProjection: false
         });
       }
-    }
 
-    // 2. NOW / Transition boundary tick
-    if (candles && candles.length > 0) {
       const lastCandle = candles[candles.length - 1];
       ticks.push({
         x: startX,
@@ -237,7 +307,6 @@ export const CandlestickChart: React.FC<CandlestickChartProps> = ({
       });
     }
 
-    // 3. Trajectory Projection Ticks (~3 ticks)
     const points = prediction?.trajectoryPoints;
     if (points && points.length > 0) {
       const selectSteps = [8, 16, 25].filter((s) => s < points.length);
@@ -255,43 +324,52 @@ export const CandlestickChart: React.FC<CandlestickChartProps> = ({
     return ticks;
   }, [candles, slotWidth, startX, prediction, timeframe]);
 
+  // Handle Mouse Move over Chart container to position floating Tooltip
+  const handleMouseMove = (e: React.MouseEvent<SVGSVGElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    setMousePos({ x, y });
+  };
+
   return (
     <div className="card" style={{ width: '100%' }}>
-      {/* ── Header ── */}
+      {/* ── Header Controls Bar ── */}
       <div className="card-title" style={{ justifyContent: 'space-between', marginBottom: '0.75rem', flexWrap: 'wrap', gap: '0.5rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
           <ChartIcon size={20} color="#06b6d4" />
-          Live Candlestick & Monte Carlo Trajectory ({symbol} • {timeframe})
+          Biểu Đồ Nến Live & Mô Phỏng Monte Carlo ({symbol} • Khung {timeframe})
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', fontSize: '0.75rem', fontWeight: 600, flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', fontSize: '0.75rem', fontWeight: 600, flexWrap: 'wrap' }}>
           <span style={{ color: '#06b6d4' }}>● EMA 20 (${snapshot ? formatPrice(snapshot.ema20) : '---'})</span>
           <span style={{ color: '#3b82f6' }}>● EMA 50 (${snapshot ? formatPrice(snapshot.ema50) : '---'})</span>
           <span style={{ color: '#8b5cf6' }}>● EMA 200 (${snapshot ? formatPrice(snapshot.ema200) : '---'})</span>
 
-          {/* Scenario toggle buttons */}
+          {/* Scenario Toggle Buttons */}
           {prediction?.scenarioPaths && prediction.scenarioPaths.length > 0 && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-              <GitBranch size={12} color="#64748b" />
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
               {Object.entries(SCENARIO_STYLES).map(([name, s]) => (
                 <button
                   key={name}
                   type="button"
                   onClick={() => toggleScenario(name)}
                   style={{
-                    display: 'flex', alignItems: 'center', gap: '0.2rem',
+                    display: 'flex', alignItems: 'center', gap: '0.3rem',
                     background: visibleScenarios[name] ? `${s.stroke}22` : 'rgba(100,116,139,0.08)',
-                    border: `1px solid ${visibleScenarios[name] ? s.stroke + '88' : 'rgba(100,116,139,0.2)'}`,
-                    borderRadius: '5px', padding: '0.15rem 0.5rem',
+                    border: `1px solid ${visibleScenarios[name] ? s.stroke + '99' : 'rgba(100,116,139,0.25)'}`,
+                    borderRadius: '6px', padding: '0.2rem 0.55rem',
                     color: visibleScenarios[name] ? s.stroke : '#64748b',
-                    cursor: 'pointer', fontWeight: 700, fontSize: '0.68rem'
+                    cursor: 'pointer', fontWeight: 800, fontSize: '0.72rem'
                   }}
+                  title={s.desc}
                 >
-                  {s.label}
+                  <span>{s.label}</span>
                 </button>
               ))}
             </div>
           )}
 
+          {/* Independent Corridor Shading Toggle */}
           <button
             type="button"
             onClick={() => setShowProjection((p) => !p)}
@@ -309,80 +387,34 @@ export const CandlestickChart: React.FC<CandlestickChartProps> = ({
               fontSize: '0.72rem'
             }}
           >
-            <Navigation size={12} />
-            {showProjection ? 'Corridor ON' : 'Corridor OFF'}
+            {showProjection ? <Eye size={12} /> : <EyeOff size={12} />}
+            {showProjection ? 'Hành Lang Monte Carlo: BẬT' : 'Hành Lang: TẮT'}
           </button>
         </div>
       </div>
 
-      {/* ── Hover Banner (Candle OHLCV or Trajectory Step Info) ── */}
-      <div style={{ height: '36px', minHeight: '36px', marginBottom: '0.75rem', display: 'flex', alignItems: 'center' }}>
-        {hoveredCandle ? (
-          <div style={{
-            width: '100%', display: 'flex', gap: '1.5rem',
-            background: '#0a0e16', border: '1px solid rgba(255,255,255,0.08)',
-            padding: '0.35rem 0.85rem', borderRadius: '6px',
-            fontSize: '0.8rem', alignItems: 'center', flexWrap: 'wrap', fontFamily: 'JetBrains Mono, monospace'
-          }}>
-            <div>Time: <strong style={{ color: '#f8fafc' }}>{new Date(hoveredCandle.openTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</strong></div>
-            <div>O: <strong style={{ color: '#f8fafc' }}>${formatPrice(hoveredCandle.open)}</strong></div>
-            <div>H: <strong style={{ color: '#10b981' }}>${formatPrice(hoveredCandle.high)}</strong></div>
-            <div>L: <strong style={{ color: '#f43f5e' }}>${formatPrice(hoveredCandle.low)}</strong></div>
-            <div>C: <strong style={{ color: hoveredCandle.close >= hoveredCandle.open ? '#10b981' : '#f43f5e' }}>${formatPrice(hoveredCandle.close)}</strong></div>
-            <div>Vol: <strong style={{ color: '#06b6d4' }}>{hoveredCandle.volume.toFixed(2)}</strong></div>
-          </div>
-        ) : hoveredTrajectoryPt ? (
-          <div style={{
-            width: '100%', display: 'flex', gap: '1rem',
-            background: 'rgba(6, 182, 212, 0.08)', border: '1px solid rgba(6, 182, 212, 0.3)',
-            padding: '0.35rem 0.85rem', borderRadius: '6px',
-            fontSize: '0.78rem', alignItems: 'center', flexWrap: 'wrap', fontFamily: 'JetBrains Mono, monospace'
-          }}>
-            <div style={{ color: '#06b6d4', fontWeight: 800 }}>
-              STEP {hoveredTrajectoryPt.step} (+{hoveredTrajectoryPt.step * 2}c)
-            </div>
-            {hoveredTrajectoryPt.timestamp && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                <Clock size={12} color="#06b6d4" />
-                <strong style={{ color: '#f8fafc' }}>
-                  {new Date(hoveredTrajectoryPt.timestamp).toLocaleString([], { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}
-                </strong>
-              </div>
-            )}
-            <div>Exp. O: <strong style={{ color: '#f8fafc' }}>${formatPrice(hoveredTrajectoryPt.expectedOpen ?? hoveredTrajectoryPt.price)}</strong></div>
-            <div>H: <strong style={{ color: '#10b981' }}>${formatPrice(hoveredTrajectoryPt.expectedHigh ?? hoveredTrajectoryPt.upperBound)}</strong></div>
-            <div>L: <strong style={{ color: '#f43f5e' }}>${formatPrice(hoveredTrajectoryPt.expectedLow ?? hoveredTrajectoryPt.lowerBound)}</strong></div>
-            <div>C: <strong style={{ color: '#06b6d4' }}>${formatPrice(hoveredTrajectoryPt.expectedClose ?? hoveredTrajectoryPt.price)}</strong></div>
-            <div style={{ paddingLeft: '0.5rem', borderLeft: '1px solid rgba(255,255,255,0.1)' }}>
-              TP Hit So Far: <strong style={{ color: '#10b981' }}>{hoveredTrajectoryPt.cumulativeTpHitProb ?? 0}%</strong>
-            </div>
-            <div>
-              SL Hit So Far: <strong style={{ color: '#f43f5e' }}>{hoveredTrajectoryPt.cumulativeSlHitProb ?? 0}%</strong>
-            </div>
-          </div>
-        ) : (
-          <div style={{ fontSize: '0.75rem', color: '#94a3b8', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-            <Layers size={14} color="#06b6d4" />
-            {backendTrajectory.isBackendCalculated
-              ? `Hover over future trajectory candles to inspect step-by-step OHLC forecasts and cumulative TP/SL hit probabilities.`
-              : `Hover over candles to inspect OHLCV data. Trajectory shows expected price path corridor.`}
-          </div>
-        )}
-      </div>
-
-      {/* ── SVG Canvas ── */}
-      <div style={{
-        position: 'relative', width: '100%',
-        background: '#070a12', border: '1px solid rgba(255,255,255,0.08)',
-        borderRadius: '12px', overflow: 'hidden'
-      }}>
+      {/* ── SVG Canvas Container ── */}
+      <div
+        ref={containerRef}
+        style={{
+          position: 'relative',
+          width: '100%',
+          background: '#070a12',
+          border: '1px solid rgba(255,255,255,0.08)',
+          borderRadius: '12px',
+          overflow: 'hidden'
+        }}
+      >
         <svg
           viewBox={`0 0 ${SVG_WIDTH} ${SVG_HEIGHT}`}
           preserveAspectRatio="none"
-          style={{ width: '100%', height: '400px', display: 'block' }}
+          style={{ width: '100%', height: '420px', display: 'block' }}
+          onMouseMove={handleMouseMove}
           onMouseLeave={() => {
             setHoveredIndex(null);
             setHoveredTrajectoryPt(null);
+            setHoveredScenarioName(null);
+            setMousePos(null);
           }}
         >
           {/* Gradient Definitions */}
@@ -442,10 +474,9 @@ export const CandlestickChart: React.FC<CandlestickChartProps> = ({
             ))}
           </g>
 
-          {/* ── Backend Calculated Trajectory Corridor & Path ── */}
-          {showProjection && backendTrajectory && (
+          {/* ── Projection Divider Line ── */}
+          {backendTrajectory && (
             <g style={{ pointerEvents: 'none' }}>
-              {/* Vertical separator: History vs Projection */}
               <line
                 x1={backendTrajectory.startX}
                 y1={PRICE_TOP}
@@ -458,7 +489,7 @@ export const CandlestickChart: React.FC<CandlestickChartProps> = ({
               <rect
                 x={backendTrajectory.startX + 4}
                 y={PRICE_TOP + 4}
-                width="140"
+                width="160"
                 height="18"
                 fill="rgba(6, 182, 212, 0.15)"
                 rx="4"
@@ -471,17 +502,19 @@ export const CandlestickChart: React.FC<CandlestickChartProps> = ({
                 fontWeight="800"
                 fontFamily="Inter, sans-serif"
               >
-                {backendTrajectory.isBackendCalculated ? '▶ QUANT MONTE CARLO' : '▶ PREDICTED PATH'}
+                {backendTrajectory.isBackendCalculated ? '▶ MÔ PHỎNG MONTE CARLO' : '▶ DỰ BÁO XU HƯỚNG'}
               </text>
+            </g>
+          )}
 
-              {/* Confidence Corridor Shading Area (Backend Percentile Envelope) */}
+          {/* ── Monte Carlo Corridor Background Shading (Independent toggle showProjection) ── */}
+          {showProjection && backendTrajectory && (
+            <g style={{ pointerEvents: 'none' }}>
               <path
                 d={backendTrajectory.corridorD}
                 fill="url(#corridorFill)"
                 stroke="none"
               />
-
-              {/* Peak High Boundary Line (Upper Wick Envelope) */}
               {backendTrajectory.upperPathD && (
                 <path
                   d={backendTrajectory.upperPathD}
@@ -489,11 +522,9 @@ export const CandlestickChart: React.FC<CandlestickChartProps> = ({
                   stroke="#10b981"
                   strokeWidth="1.5"
                   strokeDasharray="3 3"
-                  opacity="0.5"
+                  opacity="0.4"
                 />
               )}
-
-              {/* Trough Low Boundary Line (Lower Wick Envelope) */}
               {backendTrajectory.lowerPathD && (
                 <path
                   d={backendTrajectory.lowerPathD}
@@ -501,71 +532,116 @@ export const CandlestickChart: React.FC<CandlestickChartProps> = ({
                   stroke="#f43f5e"
                   strokeWidth="1.5"
                   strokeDasharray="3 3"
-                  opacity="0.5"
+                  opacity="0.4"
                 />
               )}
+            </g>
+          )}
 
-              {/* ── Scenario Paths (Bear / Base / Bull coherent real paths) ── */}
-              {prediction?.scenarioPaths?.map((scenario: ScenarioPathDto) => {
-                if (!visibleScenarios[scenario.name]) return null;
-                const style = SCENARIO_STYLES[scenario.name];
-                if (!style) return null;
+          {/* ── Scenario Lines (Bull / Base / Bear) - Rendered independently ── */}
+          {backendTrajectory && prediction?.scenarioPaths?.map((scenario: ScenarioPathDto) => {
+            if (!visibleScenarios[scenario.name]) return null;
+            const style = SCENARIO_STYLES[scenario.name];
+            if (!style) return null;
 
-                // Map each scenario point to SVG coords using the same x-mapping
-                // as the trajectory envelope: x = startX + step*2*slotWidth
-                const pts = scenario.points.map((pt) => ({
-                  x: startX + (pt.step * 2) * slotWidth,
-                  y: getY(pt.price)
-                }));
+            const isHovered = hoveredScenarioName === scenario.name;
 
-                const pathD = pts.reduce((acc, p, idx) =>
-                  idx === 0 ? `M ${p.x} ${p.y}` : `${acc} L ${p.x} ${p.y}`, '');
+            const pts = scenario.points.map((pt) => ({
+              x: startX + (pt.step * 2) * slotWidth,
+              y: getY(pt.price)
+            }));
 
-                const endPt = pts[pts.length - 1];
-                const lastPtData = scenario.points[scenario.points.length - 1];
+            const pathD = pts.reduce((acc, p, idx) =>
+              idx === 0 ? `M ${p.x} ${p.y}` : `${acc} L ${p.x} ${p.y}`, '');
 
-                return (
-                  <g key={scenario.name} style={{ pointerEvents: 'none' }}>
-                    {/* Scenario Path Line */}
-                    <path
-                      d={pathD}
-                      fill="none"
-                      stroke={style.stroke}
-                      strokeWidth={scenario.name === 'Base' ? 2.5 : 1.75}
-                      strokeDasharray={scenario.name === 'Bear' ? '4 3' : scenario.name === 'Bull' ? '4 3' : 'none'}
-                      opacity={scenario.name === 'Base' ? 0.9 : 0.65}
-                    />
-                    {/* Scenario endpoint label */}
-                    {endPt && (
-                      <>
-                        <circle cx={endPt.x} cy={endPt.y} r="4" fill={style.stroke} opacity="0.9" />
-                        <g transform={`translate(${Math.min(SVG_WIDTH - 110, endPt.x + 6)}, ${endPt.y - 10})`}>
-                          <rect
-                            width="100"
-                            height="18"
-                            rx="3"
-                            fill="#090d16"
-                            stroke={style.stroke}
-                            strokeWidth="0.8"
-                            opacity="0.9"
-                          />
-                          <text
-                            x="5" y="13"
-                            fill={style.stroke}
-                            fontSize="8.5"
-                            fontWeight="800"
-                            fontFamily="JetBrains Mono, monospace"
-                          >
-                            {scenario.name.toUpperCase()}: ${formatPrice(lastPtData?.price ?? 0)}
-                          </text>
-                        </g>
-                      </>
-                    )}
-                  </g>
-                );
-              })}
+            return (
+              <g key={scenario.name}>
+                <path
+                  d={pathD}
+                  fill="none"
+                  stroke={style.stroke}
+                  strokeWidth={isHovered ? 3.5 : scenario.name === 'Base' ? 2.5 : 1.8}
+                  strokeDasharray={scenario.name === 'Bear' ? '4 3' : scenario.name === 'Bull' ? '4 3' : 'none'}
+                  opacity={isHovered ? 1 : scenario.name === 'Base' ? 0.95 : 0.75}
+                  style={{ pointerEvents: 'stroke', cursor: 'pointer' }}
+                  onMouseEnter={() => setHoveredScenarioName(scenario.name)}
+                  onMouseLeave={() => setHoveredScenarioName(null)}
+                />
+              </g>
+            );
+          })}
 
-              {/* Main Trajectory Path (Median Percentile Envelope) */}
+          {/* ── PROMINENT SCENARIO NOTE BADGES AT CANDLE ENDPOINT ── */}
+          {backendTrajectory && scenarioLabelsList.map((item) => {
+            const style = SCENARIO_STYLES[item.name];
+            if (!style) return null;
+
+            const labelX = Math.min(SVG_WIDTH - 180, item.endPt.x + 8);
+            const labelY = item.labelY - 13;
+            const isHovered = hoveredScenarioName === item.name;
+
+            return (
+              <g
+                key={`note-${item.name}`}
+                style={{ cursor: 'pointer' }}
+                onMouseEnter={() => setHoveredScenarioName(item.name)}
+                onMouseLeave={() => setHoveredScenarioName(null)}
+              >
+                {/* Circle marker at scenario candle endpoint */}
+                <circle cx={item.endPt.x} cy={item.endPt.y} r={isHovered ? 7 : 5} fill={style.stroke} />
+                <circle cx={item.endPt.x} cy={item.endPt.y} r={isHovered ? 12 : 8} fill={style.stroke} opacity="0.3" />
+
+                {/* Connecting guide line from candle endpoint to note badge */}
+                <line
+                  x1={item.endPt.x}
+                  y1={item.endPt.y}
+                  x2={labelX}
+                  y2={labelY + 13}
+                  stroke={style.stroke}
+                  strokeWidth={isHovered ? "1.5" : "1"}
+                  strokeDasharray="2 2"
+                  opacity="0.8"
+                />
+
+                {/* Note Card Badge directly anchored on chart candle column */}
+                <g transform={`translate(${labelX}, ${labelY})`}>
+                  <rect
+                    width="170"
+                    height="26"
+                    rx="6"
+                    fill="#090d16"
+                    stroke={style.stroke}
+                    strokeWidth={isHovered ? "2.5" : "1.5"}
+                  />
+                  <text
+                    x="8"
+                    y="17"
+                    fill={style.stroke}
+                    fontSize="10"
+                    fontWeight="900"
+                    fontFamily="JetBrains Mono, monospace"
+                  >
+                    {style.emoji} {item.name.toUpperCase()}: ${formatPrice(item.lastPtData.price)}
+                  </text>
+                  <text
+                    x="162"
+                    y="17"
+                    textAnchor="end"
+                    fill={Number(item.diffText.replace('%', '')) >= 0 ? '#10b981' : '#f43f5e'}
+                    fontSize="9.5"
+                    fontWeight="800"
+                    fontFamily="JetBrains Mono, monospace"
+                  >
+                    {item.diffText}
+                  </text>
+                </g>
+              </g>
+            );
+          })}
+
+          {/* Main Trajectory Path (Median) */}
+          {backendTrajectory && (
+            <g style={{ pointerEvents: 'none' }}>
               <path
                 d={backendTrajectory.pathD}
                 fill="none"
@@ -592,40 +668,6 @@ export const CandlestickChart: React.FC<CandlestickChartProps> = ({
                 );
               })}
 
-              {/* Interactive Hover Crosshair Focus Line & Peak/Trough Badges */}
-              {hoveredTrajectoryPt && backendTrajectory.mainPoints && (() => {
-                const p = backendTrajectory.mainPoints.find((mp) => mp.pt.step === hoveredTrajectoryPt.step);
-                if (!p) return null;
-
-                const highY = getY(p.pt.expectedHigh ?? p.pt.upperBound);
-                const lowY = getY(p.pt.expectedLow ?? p.pt.lowerBound);
-
-                return (
-                  <g style={{ pointerEvents: 'none' }}>
-                    {/* Vertical Step Guide Line */}
-                    <line x1={p.x} y1={highY} x2={p.x} y2={lowY} stroke="#06b6d4" strokeWidth="1.5" strokeDasharray="3 3" />
-
-                    {/* Peak High Marker Dot & Badge */}
-                    <circle cx={p.x} cy={highY} r="4" fill="#10b981" />
-                    <g transform={`translate(${Math.min(SVG_WIDTH - 200, p.x + 8)}, ${highY - 12})`}>
-                      <rect width="90" height="18" rx="4" fill="#061a12" stroke="#10b981" strokeWidth="1" />
-                      <text x="6" y="13" fill="#10b981" fontSize="9" fontWeight="800" fontFamily="JetBrains Mono, monospace">
-                        PEAK: ${formatPrice(p.pt.expectedHigh ?? p.pt.upperBound)}
-                      </text>
-                    </g>
-
-                    {/* Trough Low Marker Dot & Badge */}
-                    <circle cx={p.x} cy={lowY} r="4" fill="#f43f5e" />
-                    <g transform={`translate(${Math.min(SVG_WIDTH - 200, p.x + 8)}, ${lowY - 6})`}>
-                      <rect width="90" height="18" rx="4" fill="#22070e" stroke="#f43f5e" strokeWidth="1" />
-                      <text x="6" y="13" fill="#f43f5e" fontSize="9" fontWeight="800" fontFamily="JetBrains Mono, monospace">
-                        LOW: ${formatPrice(p.pt.expectedLow ?? p.pt.lowerBound)}
-                      </text>
-                    </g>
-                  </g>
-                );
-              })()}
-
               {/* Start Dot */}
               <circle
                 cx={backendTrajectory.startX}
@@ -641,13 +683,6 @@ export const CandlestickChart: React.FC<CandlestickChartProps> = ({
                 r="7"
                 fill={isLong ? '#10b981' : '#f43f5e'}
                 opacity="0.9"
-              />
-              <circle
-                cx={backendTrajectory.endX}
-                cy={backendTrajectory.targetY}
-                r="12"
-                fill={isLong ? '#10b981' : '#f43f5e'}
-                opacity="0.3"
               />
 
               {/* Trajectory Milestone Target Badge */}
@@ -768,7 +803,7 @@ export const CandlestickChart: React.FC<CandlestickChartProps> = ({
           )}
 
           {/* Interactive Mouse Listener Layer for Trajectory Points */}
-          {showProjection && backendTrajectory.mainPoints && (
+          {backendTrajectory && backendTrajectory.mainPoints && (
             <g>
               {backendTrajectory.mainPoints.map((p, i) => {
                 const stepXWidth = 2 * slotWidth;
@@ -789,7 +824,176 @@ export const CandlestickChart: React.FC<CandlestickChartProps> = ({
             </g>
           )}
         </svg>
+
+        {/* ── DYNAMIC FLOATING TOOLTIP CARD AT CURSOR LOCATION ── */}
+        {(hoveredCandle || hoveredTrajectoryPt) && mousePos && (
+          <div
+            style={{
+              position: 'absolute',
+              left: Math.min(Math.max(10, mousePos.x + 15), SVG_WIDTH - 240),
+              top: Math.min(Math.max(10, mousePos.y - 10), 220),
+              width: '220px',
+              background: '#090d16',
+              border: '1px solid rgba(6, 182, 212, 0.4)',
+              borderRadius: '10px',
+              padding: '0.75rem',
+              boxShadow: '0 10px 25px rgba(0, 0, 0, 0.85)',
+              pointerEvents: 'none',
+              zIndex: 50,
+              fontFamily: 'JetBrains Mono, monospace',
+              backdropFilter: 'blur(8px)'
+            }}
+          >
+            {/* Historical Candle Tooltip */}
+            {hoveredCandle && (
+              <div>
+                <div style={{ fontSize: '0.72rem', color: '#06b6d4', fontWeight: 800, marginBottom: '0.4rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                  <Clock size={12} />
+                  NẾN LỊCH SỬ • {new Date(hoveredCandle.openTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.3rem', fontSize: '0.75rem' }}>
+                  <div>Mở: <strong style={{ color: '#f8fafc' }}>${formatPrice(hoveredCandle.open)}</strong></div>
+                  <div>Đóng: <strong style={{ color: hoveredCandle.close >= hoveredCandle.open ? '#10b981' : '#f43f5e' }}>${formatPrice(hoveredCandle.close)}</strong></div>
+                  <div>Cao: <strong style={{ color: '#10b981' }}>${formatPrice(hoveredCandle.high)}</strong></div>
+                  <div>Thấp: <strong style={{ color: '#f43f5e' }}>${formatPrice(hoveredCandle.low)}</strong></div>
+                </div>
+                <div style={{ fontSize: '0.7rem', color: '#94a3b8', marginTop: '0.4rem', borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '0.3rem' }}>
+                  Khối Lượng: <strong style={{ color: '#06b6d4' }}>{hoveredCandle.volume.toFixed(2)}</strong>
+                </div>
+              </div>
+            )}
+
+            {/* Future Trajectory / Scenario Tooltip */}
+            {hoveredTrajectoryPt && (
+              <div>
+                <div style={{ fontSize: '0.72rem', color: '#06b6d4', fontWeight: 800, marginBottom: '0.4rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                  <Clock size={12} />
+                  BƯỚC {hoveredTrajectoryPt.step} (+{hoveredTrajectoryPt.step * 2} nến)
+                </div>
+
+                {/* Scenario breakdown prices at this step */}
+                {stepScenarioPrices ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', marginBottom: '0.4rem', fontSize: '0.75rem' }}>
+                    {stepScenarioPrices['Bull'] && (
+                      <div style={{ display: 'flex', justifyContent: 'space-between', color: '#10b981' }}>
+                        <span>🐂 Bull (P90):</span>
+                        <strong>${formatPrice(stepScenarioPrices['Bull'].price)} ({stepScenarioPrices['Bull'].diffText})</strong>
+                      </div>
+                    )}
+                    {stepScenarioPrices['Base'] && (
+                      <div style={{ display: 'flex', justifyContent: 'space-between', color: '#f59e0b' }}>
+                        <span>📊 Base (P50):</span>
+                        <strong>${formatPrice(stepScenarioPrices['Base'].price)} ({stepScenarioPrices['Base'].diffText})</strong>
+                      </div>
+                    )}
+                    {stepScenarioPrices['Bear'] && (
+                      <div style={{ display: 'flex', justifyContent: 'space-between', color: '#f43f5e' }}>
+                        <span>🐻 Bear (P10):</span>
+                        <strong>${formatPrice(stepScenarioPrices['Bear'].price)} ({stepScenarioPrices['Bear'].diffText})</strong>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div style={{ fontSize: '0.85rem', fontWeight: 800, color: '#06b6d4', marginBottom: '0.3rem' }}>
+                    Giá Dự Báo: ${formatPrice(hoveredTrajectoryPt.price)}
+                  </div>
+                )}
+
+                {/* Cumulative Hit Probabilities */}
+                <div style={{ fontSize: '0.68rem', color: '#94a3b8', borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '0.35rem', display: 'flex', justifyContent: 'space-between' }}>
+                  <span>Xác Suất Chạm TP: <strong style={{ color: '#10b981' }}>{hoveredTrajectoryPt.cumulativeTpHitProb ?? 0}%</strong></span>
+                  <span>SL: <strong style={{ color: '#f43f5e' }}>{hoveredTrajectoryPt.cumulativeSlHitProb ?? 0}%</strong></span>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </div>
+
+      {/* ── SCENARIO SUMMARY NOTE CARDS BELOW CHART ── */}
+      {scenarioSummaryData && (
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
+          gap: '0.75rem',
+          marginTop: '0.85rem'
+        }}>
+          {/* Bull Scenario Note Card */}
+          {scenarioSummaryData['Bull'] && (
+            <div style={{
+              background: 'rgba(16, 185, 129, 0.08)',
+              border: '1px solid rgba(16, 185, 129, 0.3)',
+              borderRadius: '10px',
+              padding: '0.75rem 1rem'
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ color: '#10b981', fontWeight: 800, fontSize: '0.82rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                  🐂 Kịch Bản Tăng (Bull P90)
+                </span>
+                <span style={{ fontSize: '0.72rem', color: '#10b981', fontWeight: 800, background: 'rgba(16, 185, 129, 0.15)', padding: '0.1rem 0.4rem', borderRadius: '4px' }}>
+                  {scenarioSummaryData['Bull'].diffText}
+                </span>
+              </div>
+              <div style={{ fontSize: '1.15rem', fontWeight: 900, color: '#f8fafc', margin: '0.25rem 0', fontFamily: 'JetBrains Mono, monospace' }}>
+                ${formatPrice(scenarioSummaryData['Bull'].price)}
+              </div>
+              <div style={{ fontSize: '0.7rem', color: '#94a3b8' }}>
+                Mức giá kỳ vọng ở phân vị 90% khi thị trường tăng tích cực
+              </div>
+            </div>
+          )}
+
+          {/* Base Scenario Note Card */}
+          {scenarioSummaryData['Base'] && (
+            <div style={{
+              background: 'rgba(245, 158, 11, 0.08)',
+              border: '1px solid rgba(245, 158, 11, 0.3)',
+              borderRadius: '10px',
+              padding: '0.75rem 1rem'
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ color: '#f59e0b', fontWeight: 800, fontSize: '0.82rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                  📊 Kịch Bản Cơ Sở (Base P50)
+                </span>
+                <span style={{ fontSize: '0.72rem', color: '#f59e0b', fontWeight: 800, background: 'rgba(245, 158, 11, 0.15)', padding: '0.1rem 0.4rem', borderRadius: '4px' }}>
+                  {scenarioSummaryData['Base'].diffText}
+                </span>
+              </div>
+              <div style={{ fontSize: '1.15rem', fontWeight: 900, color: '#f8fafc', margin: '0.25rem 0', fontFamily: 'JetBrains Mono, monospace' }}>
+                ${formatPrice(scenarioSummaryData['Base'].price)}
+              </div>
+              <div style={{ fontSize: '0.7rem', color: '#94a3b8' }}>
+                Mức giá trung vị 50% kỳ vọng nhất theo mô phỏng Monte Carlo
+              </div>
+            </div>
+          )}
+
+          {/* Bear Scenario Note Card */}
+          {scenarioSummaryData['Bear'] && (
+            <div style={{
+              background: 'rgba(244, 63, 94, 0.08)',
+              border: '1px solid rgba(244, 63, 94, 0.3)',
+              borderRadius: '10px',
+              padding: '0.75rem 1rem'
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ color: '#f43f5e', fontWeight: 800, fontSize: '0.82rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                  🐻 Kịch Bản Giảm (Bear P10)
+                </span>
+                <span style={{ fontSize: '0.72rem', color: '#f43f5e', fontWeight: 800, background: 'rgba(244, 63, 94, 0.15)', padding: '0.1rem 0.4rem', borderRadius: '4px' }}>
+                  {scenarioSummaryData['Bear'].diffText}
+                </span>
+              </div>
+              <div style={{ fontSize: '1.15rem', fontWeight: 900, color: '#f8fafc', margin: '0.25rem 0', fontFamily: 'JetBrains Mono, monospace' }}>
+                ${formatPrice(scenarioSummaryData['Bear'].price)}
+              </div>
+              <div style={{ fontSize: '0.7rem', color: '#94a3b8' }}>
+                Mức giá kịch bản xấu nhất ở phân vị 10% khi xuất hiện biến động giảm
+              </div>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 };

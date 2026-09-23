@@ -12,15 +12,18 @@ import { MarketSnapshotCard } from './components/MarketSnapshotCard';
 import { RiskWarningsPanel } from './components/RiskWarningsPanel';
 import { TradeJournalTable } from './components/TradeJournalTable';
 import { PredictionBacktestView } from './components/PredictionBacktestView';
+import { MarketAnalyzerWidget } from './components/MarketAnalyzerWidget';
 import type {
   CreateTradeRequest,
   EvaluateTradeResponse,
   TradeResponse,
   CloseTradeRequest,
   TradeDirection,
-  Timeframe
+  Timeframe,
+  ProposedTradeSetupDto
 } from './types/trade';
-import { createTrade, evaluateTrade, getTrades, closeTrade } from './api/tradeApi';
+
+import { createTrade, evaluateTrade, getTrades, closeTrade, getTicker } from './api/tradeApi';
 import { Zap, AlertCircle, BarChart2 } from 'lucide-react';
 
 const TOP_TICKERS = [
@@ -46,13 +49,34 @@ export function App() {
   const [activeStopLoss, setActiveStopLoss] = useState<number>(102500);
   const [activeTakeProfit, setActiveTakeProfit] = useState<number>(108500);
 
+  const [tickerPrices, setTickerPrices] = useState<Record<string, number>>({});
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  // Load trade journal on mount
+  // Load trade journal on mount and poll top tickers every 4s
   useEffect(() => {
     loadTradeJournal();
+    pollTickers();
+
+    const tickerInterval = setInterval(() => {
+      pollTickers();
+    }, 4000);
+
+    return () => clearInterval(tickerInterval);
   }, []);
+
+  const pollTickers = async () => {
+    for (const t of TOP_TICKERS) {
+      try {
+        const data = await getTicker(t.symbol);
+        if (data && data.price > 0) {
+          setTickerPrices((prev) => ({ ...prev, [t.symbol]: data.price }));
+        }
+      } catch {
+        // Silent catch for background ticker refresh
+      }
+    }
+  };
 
   const loadTradeJournal = async () => {
     try {
@@ -138,7 +162,36 @@ export function App() {
     }
   };
 
+  const handleApplyProposedSetup = async (
+    setup: ProposedTradeSetupDto,
+    symbol: string,
+    timeframe: Timeframe
+  ) => {
+    setActiveSymbol(symbol);
+    setActiveDirection(setup.direction);
+    setActiveTimeframe(timeframe);
+    setActiveEntryPrice(setup.entryPrice);
+    setActiveStopLoss(setup.stopLoss);
+    setActiveTakeProfit(setup.takeProfit);
+
+    setActiveTab('terminal');
+
+    // Automatically evaluate the setup on the trading desk
+    handleEvaluateSetup({
+      symbol,
+      direction: setup.direction,
+      timeframe,
+      entryPrice: setup.entryPrice,
+      stopLoss: setup.stopLoss,
+      takeProfit: setup.takeProfit,
+      accountBalance: 10000,
+      riskPercent: 1.0,
+      leverage: 10
+    });
+  };
+
   return (
+
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       {/* Top Navbar with Workspace Tabs */}
       <Navbar
@@ -153,18 +206,33 @@ export function App() {
         <span style={{ color: '#64748b', fontWeight: 700, fontSize: '0.72rem', textTransform: 'uppercase' }}>
           LIVE FUTURES TICKERS:
         </span>
-        {TOP_TICKERS.map((t) => (
-          <motion.div
-            key={t.symbol}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            className="ticker-item"
-            onClick={() => setActiveSymbol(t.symbol)}
-          >
-            <span style={{ fontWeight: 800, color: '#f8fafc' }}>{t.name}</span>
-            <span style={{ fontSize: '0.7rem', color: '#06b6d4' }}>● Live</span>
-          </motion.div>
-        ))}
+        {TOP_TICKERS.map((t) => {
+          const livePrice = tickerPrices[t.symbol];
+          return (
+            <motion.div
+              key={t.symbol}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="ticker-item"
+              onClick={() => {
+                setActiveSymbol(t.symbol);
+                if (livePrice && livePrice > 0) {
+                  setActiveEntryPrice(livePrice);
+                }
+              }}
+              style={{ cursor: 'pointer' }}
+            >
+              <span style={{ fontWeight: 800, color: '#f8fafc' }}>{t.name}</span>
+              {livePrice ? (
+                <span style={{ fontSize: '0.78rem', fontWeight: 800, color: '#06b6d4', fontFamily: 'JetBrains Mono, monospace' }}>
+                  ${livePrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 4 })}
+                </span>
+              ) : (
+                <span style={{ fontSize: '0.7rem', color: '#06b6d4' }}>● Live</span>
+              )}
+            </motion.div>
+          );
+        })}
       </div>
 
       <main className="container" style={{ flex: 1, paddingTop: '1.25rem' }}>
@@ -206,7 +274,16 @@ export function App() {
             >
               {/* Left Column: Trade Setup Form */}
               <div>
-                <TradeForm onSubmit={handleEvaluateSetup} isLoading={isLoading} />
+                <TradeForm
+                  onSubmit={handleEvaluateSetup}
+                  isLoading={isLoading}
+                  activeSymbol={activeSymbol}
+                  activeDirection={activeDirection}
+                  activeTimeframe={activeTimeframe}
+                  activeEntryPrice={activeEntryPrice}
+                  activeStopLoss={activeStopLoss}
+                  activeTakeProfit={activeTakeProfit}
+                />
               </div>
 
               {/* Right Column: Chart & Score Overview */}
@@ -252,8 +329,26 @@ export function App() {
             </motion.div>
           )}
 
+          {/* ── TAB: AI MARKET ANALYZER & SETUP FINDER ── */}
+          {activeTab === 'analyzer' && (
+            <motion.div
+              key="analyzer-tab"
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -12 }}
+              transition={{ duration: 0.25 }}
+            >
+              <MarketAnalyzerWidget
+                onApplySetup={handleApplyProposedSetup}
+                initialSymbol={activeSymbol}
+                initialTimeframe={activeTimeframe}
+              />
+            </motion.div>
+          )}
+
           {/* ── TAB 2: SCORE & RULE INSPECTOR ── */}
           {activeTab === 'inspector' && (
+
             <motion.div
               key="inspector-tab"
               initial={{ opacity: 0, y: 12 }}

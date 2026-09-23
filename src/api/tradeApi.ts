@@ -8,10 +8,13 @@ import type {
   TradeStatus,
   MarketTickerDto,
   CryptoSymbolDto,
-  PredictionBacktestReportDto
+  PredictionBacktestReportDto,
+  MarketAnalysisResponseDto,
+  Timeframe
 } from '../types/trade';
 
 const API_BASE = '/api/v1/trades';
+
 
 export async function createTrade(request: CreateTradeRequest): Promise<TradeResponse> {
   const res = await fetch(API_BASE, {
@@ -121,3 +124,16 @@ export async function getPredictionBacktest(from?: string, to?: string): Promise
   }
   return res.json();
 }
+
+export async function analyzeMarket(symbol: string, timeframe: Timeframe = 'H1'): Promise<MarketAnalysisResponseDto> {
+  const url = new URL(window.location.origin + `${API_BASE}/analyze/${encodeURIComponent(symbol)}`);
+  url.searchParams.set('timeframe', timeframe);
+
+  const res = await fetch(url.toString());
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw new Error(errorData.message || `Failed to analyze market for ${symbol}`);
+  }
+  return res.json();
+}
+

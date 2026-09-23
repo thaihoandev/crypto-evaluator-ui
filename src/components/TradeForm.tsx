@@ -7,6 +7,12 @@ import { ArrowUpRight, ArrowDownRight, Play, Calculator, AlertCircle, Search, Re
 interface TradeFormProps {
   onSubmit: (request: CreateTradeRequest) => void;
   isLoading: boolean;
+  activeSymbol?: string;
+  activeDirection?: TradeDirection;
+  activeTimeframe?: Timeframe;
+  activeEntryPrice?: number;
+  activeStopLoss?: number;
+  activeTakeProfit?: number;
 }
 
 const FALLBACK_PAIRS: CryptoSymbolDto[] = [
@@ -40,22 +46,44 @@ const FALLBACK_PAIRS: CryptoSymbolDto[] = [
   { symbol: 'AAVEUSDT', name: 'Aave' }
 ];
 
-export const TradeForm: React.FC<TradeFormProps> = ({ onSubmit, isLoading }) => {
-  const [symbol, setSymbol] = useState('BTCUSDT');
-  const [searchQuery, setSearchQuery] = useState('BTCUSDT');
+export const TradeForm: React.FC<TradeFormProps> = ({
+  onSubmit,
+  isLoading,
+  activeSymbol,
+  activeDirection,
+  activeTimeframe,
+  activeEntryPrice,
+  activeStopLoss,
+  activeTakeProfit
+}) => {
+  const [symbol, setSymbol] = useState(activeSymbol || 'BTCUSDT');
+  const [searchQuery, setSearchQuery] = useState(activeSymbol || 'BTCUSDT');
   const [availableSymbols, setAvailableSymbols] = useState<CryptoSymbolDto[]>(FALLBACK_PAIRS);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isFetchingPrice, setIsFetchingPrice] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  const [direction, setDirection] = useState<TradeDirection>('Long');
-  const [timeframe, setTimeframe] = useState<Timeframe>('H1');
-  const [entryPrice, setEntryPrice] = useState<number>(104500);
-  const [stopLoss, setStopLoss] = useState<number>(102500);
-  const [takeProfit, setTakeProfit] = useState<number>(108500);
+  const [direction, setDirection] = useState<TradeDirection>(activeDirection || 'Long');
+  const [timeframe, setTimeframe] = useState<Timeframe>(activeTimeframe || 'H1');
+  const [entryPrice, setEntryPrice] = useState<number>(activeEntryPrice ?? 104500);
+  const [stopLoss, setStopLoss] = useState<number>(activeStopLoss ?? 102500);
+  const [takeProfit, setTakeProfit] = useState<number>(activeTakeProfit ?? 108500);
   const [accountBalance, setAccountBalance] = useState<number>(10000);
   const [riskPercent, setRiskPercent] = useState<number>(1.0);
   const [leverage, setLeverage] = useState<number>(5);
+
+  // Sync active parameters whenever external props change (e.g. from AI Setup Finder)
+  useEffect(() => {
+    if (activeSymbol) {
+      setSymbol(activeSymbol);
+      setSearchQuery(activeSymbol);
+    }
+    if (activeDirection) setDirection(activeDirection);
+    if (activeTimeframe) setTimeframe(activeTimeframe);
+    if (activeEntryPrice !== undefined && activeEntryPrice > 0) setEntryPrice(activeEntryPrice);
+    if (activeStopLoss !== undefined && activeStopLoss > 0) setStopLoss(activeStopLoss);
+    if (activeTakeProfit !== undefined && activeTakeProfit > 0) setTakeProfit(activeTakeProfit);
+  }, [activeSymbol, activeDirection, activeTimeframe, activeEntryPrice, activeStopLoss, activeTakeProfit]);
 
   // Load symbols list on mount
   useEffect(() => {

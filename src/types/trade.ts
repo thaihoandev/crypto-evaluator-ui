@@ -179,3 +179,51 @@ export interface PredictionBacktestReportDto {
   averageRealizedRMultiple: number;
   calibration: CalibrationBucketDto[];
 }
+
+// ── Market Analysis & AI Setup Finder ─────────────────────────────────────────
+export type MarketRecommendation = 'Wait' | 'Long' | 'Short';
+
+export type SetupLevelSource = 'MarketStructure' | 'AtrFallback';
+
+export type MarketAnalysisBlocker =
+  | 'InsufficientClosedCandles'
+  | 'StaleMarketData'
+  | 'LowConfidence'
+  | 'LowSetupScore'
+  | 'LowWinProbability'
+  | 'LowExpectedRMultiple'
+  | 'HighNoHitProbability'
+  | 'OutsideEntryZone'
+  | 'PoorMarketStructureRiskReward';
+
+export interface ProposedTradeSetupDto {
+  direction: TradeDirection;
+  entryPrice: number;
+  stopLoss: number;
+  takeProfit: number;
+  entryZoneLow: number;
+  entryZoneHigh: number;
+  nearestSupport?: number;
+  nearestResistance?: number;
+  stopLossSource: SetupLevelSource;
+  takeProfitSource: SetupLevelSource;
+  riskRewardRatio: number;
+  setupScore: number;
+  isTradable: boolean;
+  prediction: TradePredictionDto;
+  warnings: TradeWarning[];
+}
+
+export interface MarketAnalysisResponseDto {
+  symbol: string;
+  timeframe: Timeframe;
+  snapshot: MarketSnapshotDto;
+  dataQuality: PredictionDataQualityDto;
+  recommendation: MarketRecommendation;
+  rationale: string;
+  blockingReasons: MarketAnalysisBlocker[];
+  longSetup: ProposedTradeSetupDto;
+  shortSetup: ProposedTradeSetupDto;
+  disclaimer: string;
+}
+

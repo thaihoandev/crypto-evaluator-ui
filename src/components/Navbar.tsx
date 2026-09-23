@@ -1,8 +1,8 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Activity, ShieldCheck, Cpu, LayoutDashboard, Target, BookOpen, FlaskConical } from 'lucide-react';
+import { Activity, ShieldCheck, Cpu, LayoutDashboard, Target, BookOpen, FlaskConical, Sparkles } from 'lucide-react';
 
-export type WorkspaceTab = 'terminal' | 'inspector' | 'backtest' | 'journal';
+export type WorkspaceTab = 'terminal' | 'analyzer' | 'inspector' | 'backtest' | 'journal';
 
 interface NavbarProps {
   apiStatus: 'online' | 'offline' | 'checking';
@@ -19,10 +19,12 @@ export const Navbar: React.FC<NavbarProps> = ({
 }) => {
   const tabs = [
     { id: 'terminal', label: 'Trading Desk & Chart', icon: LayoutDashboard },
+    { id: 'analyzer', label: 'AI Setup Finder', icon: Sparkles },
     { id: 'inspector', label: 'Score & Rule Inspector', icon: Target },
     { id: 'backtest', label: 'Prediction Backtest', icon: FlaskConical },
     { id: 'journal', label: `Journal (${journalCount})`, icon: BookOpen }
   ] as const;
+
 
   return (
     <header className="header-glass">

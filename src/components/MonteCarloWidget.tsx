@@ -34,10 +34,20 @@ export const MonteCarloWidget: React.FC<MonteCarloWidgetProps> = ({ prediction }
 
   const confStyle = conf ? CONFIDENCE_COLORS[conf.level] ?? CONFIDENCE_COLORS.Low : null;
 
+  const [liveAgeSeconds, setLiveAgeSeconds] = React.useState<number>(dq?.dataAgeSeconds ?? 0);
+
+  React.useEffect(() => {
+    setLiveAgeSeconds(dq?.dataAgeSeconds ?? 0);
+    const interval = setInterval(() => {
+      setLiveAgeSeconds((prev) => prev + 1);
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [dq]);
+
   const formatAge = (seconds: number) => {
     if (seconds < 60) return `${seconds}s ago`;
-    if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
-    return `${Math.floor(seconds / 3600)}h ago`;
+    if (seconds < 3600) return `${Math.floor(seconds / 60)}m ${seconds % 60}s ago`;
+    return `${Math.floor(seconds / 3600)}h ${Math.floor((seconds % 3600) / 60)}m ago`;
   };
 
   return (
@@ -297,7 +307,9 @@ export const MonteCarloWidget: React.FC<MonteCarloWidgetProps> = ({ prediction }
             </div>
             <div>
               <span style={{ color: '#64748b' }}>Tuổi dữ liệu: </span>
-              <strong style={{ color: dq.isStale ? '#f43f5e' : '#10b981' }}>{formatAge(dq.dataAgeSeconds)}</strong>
+              <strong style={{ color: dq.isStale ? '#f43f5e' : '#10b981', fontFamily: 'JetBrains Mono, monospace' }}>
+                {formatAge(liveAgeSeconds)}
+              </strong>
             </div>
             <div>
               <span style={{ color: '#64748b' }}>Nến đóng cuối: </span>

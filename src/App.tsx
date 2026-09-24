@@ -402,8 +402,20 @@ export function App() {
         </AnimatePresence>
       </main>
 
-      <footer className="border-t border-slate-800/80 py-5 text-center text-xs text-slate-500 mt-8">
-        Crypto Trade Evaluator &copy; 2026. ASP.NET Core Clean Architecture & Vite React Trading Terminal.
+      <footer className="border-t border-slate-800/80 py-6 text-center text-xs text-slate-400 mt-8 bg-slate-950/80 backdrop-blur-md">
+        <div className="max-w-[1600px] mx-auto px-4 flex flex-col sm:flex-row items-center justify-center gap-2 font-medium">
+          <span>Crypto Trade Evaluator &copy; 2026. Developed by</span>
+          <a
+            href="https://github.com/thaihoandev"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-cyan-400 hover:text-cyan-300 font-extrabold transition-colors inline-flex items-center gap-1.5 hover:underline"
+          >
+            <span className="bg-cyan-500/15 border border-cyan-500/30 text-cyan-300 text-[11px] font-mono px-2 py-0.5 rounded-full">
+              @thaihoandev
+            </span>
+          </a>
+        </div>
       </footer>
     </div>
   );

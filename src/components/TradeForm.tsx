@@ -47,6 +47,8 @@ const FALLBACK_PAIRS: CryptoSymbolDto[] = [
   { symbol: 'AAVEUSDT', name: 'Aave' }
 ];
 
+const POPULAR_TAGS = ['BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'NEARUSDT', 'BNBUSDT'];
+
 export const TradeForm: React.FC<TradeFormProps> = ({
   onSubmit,
   isLoading,
@@ -75,7 +77,7 @@ export const TradeForm: React.FC<TradeFormProps> = ({
   const [riskPercent, setRiskPercent] = useState<number>(1.0);
   const [leverage, setLeverage] = useState<number>(5);
 
-  // Sync active parameters whenever external props change (e.g. from AI Setup Finder)
+  // Sync active parameters whenever external props change
   useEffect(() => {
     if (activeSymbol) {
       setSymbol(activeSymbol);
@@ -124,7 +126,7 @@ export const TradeForm: React.FC<TradeFormProps> = ({
     );
   }, [searchQuery, availableSymbols]);
 
-  // Fetch Live Price from Backend API (server-side Binance lookup)
+  // Fetch Live Price from Backend API
   const fetchLivePriceAndSetTargets = async (sym: string, currentDirection: TradeDirection, rr: number = 2.0) => {
     setIsFetchingPrice(true);
     try {
@@ -222,75 +224,88 @@ export const TradeForm: React.FC<TradeFormProps> = ({
   };
 
   return (
-    <div className="card">
-      <div className="card-title" style={{ justifyContent: 'space-between' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <Calculator size={18} color="#06b6d4" />
-          {t.tradeForm.title}
+    <div className="glass-panel rounded-2xl overflow-hidden shadow-2xl border border-slate-800/80">
+      {/* Header */}
+      <div className="p-4 border-b border-slate-800/80 bg-slate-950/70 flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2.5">
+          <div className="p-2 rounded-lg bg-cyan-500/10 border border-cyan-500/30 text-cyan-400">
+            <Calculator size={18} />
+          </div>
+          <div>
+            <h2 className="font-heading text-sm sm:text-base font-black text-slate-100 flex items-center gap-1.5">
+              {t.tradeForm.title}
+            </h2>
+            <p className="text-[11px] text-slate-400 font-medium">Quantitative Setup Desk</p>
+          </div>
         </div>
+
         <motion.button
           type="button"
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
+          whileHover={{ scale: 1.04 }}
+          whileTap={{ scale: 0.96 }}
           onClick={() => fetchLivePriceAndSetTargets(symbol, direction, 2.0)}
           disabled={isFetchingPrice}
-          style={{
-            background: 'rgba(6,182,212,0.1)',
-            border: '1px solid rgba(6,182,212,0.3)',
-            color: '#06b6d4',
-            padding: '0.25rem 0.6rem',
-            borderRadius: '6px',
-            fontSize: '0.72rem',
-            fontWeight: 700,
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.35rem'
-          }}
+          className="bg-cyan-500/15 hover:bg-cyan-500/25 text-cyan-300 border border-cyan-500/40 hover:border-cyan-400 px-3 py-1.5 rounded-xl text-xs font-extrabold shadow-sm flex items-center gap-1.5 transition-all cursor-pointer shrink-0 disabled:opacity-50"
         >
-          <RefreshCw size={12} className={isFetchingPrice ? 'spinner' : ''} />
-          {isFetchingPrice ? t.tradeForm.evaluating : t.tradeForm.fetchLivePrice}
+          <RefreshCw size={13} className={isFetchingPrice ? 'animate-spin text-cyan-400' : ''} />
+          <span>{isFetchingPrice ? t.tradeForm.evaluating : t.tradeForm.fetchLivePrice}</span>
         </motion.button>
       </div>
 
-      <form onSubmit={handleSubmit}>
-        {/* Direction Toggle */}
-        <div className="form-group">
-          <label className="form-label">{t.tradeForm.direction}</label>
-          <div className="direction-toggle">
+      <form onSubmit={handleSubmit} className="p-4 space-y-4">
+        {/* Direction Switcher (Long / Short) */}
+        <div>
+          <label className="text-[11px] font-extrabold text-slate-400 uppercase tracking-wider mb-1.5 block">
+            {t.tradeForm.direction}
+          </label>
+          <div className="grid grid-cols-2 gap-2 bg-slate-950/90 p-1 rounded-xl border border-slate-800">
             <motion.button
               type="button"
-              whileTap={{ scale: 0.96 }}
-              className={`btn-direction long ${direction === 'Long' ? 'active' : ''}`}
+              whileTap={{ scale: 0.97 }}
+              className={`py-2.5 rounded-lg font-black text-xs sm:text-sm transition-all flex items-center justify-center gap-2 cursor-pointer ${
+                direction === 'Long'
+                  ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-lg shadow-emerald-500/30 border border-emerald-400/40'
+                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/50'
+              }`}
               onClick={() => handleDirectionChange('Long')}
             >
-              <ArrowUpRight size={16} style={{ display: 'inline', marginRight: 4, verticalAlign: 'middle' }} />
-              {t.tradeForm.long}
+              <ArrowUpRight size={17} className={direction === 'Long' ? 'text-white' : 'text-emerald-400'} />
+              <span>{t.tradeForm.long}</span>
             </motion.button>
             <motion.button
               type="button"
-              whileTap={{ scale: 0.96 }}
-              className={`btn-direction short ${direction === 'Short' ? 'active' : ''}`}
+              whileTap={{ scale: 0.97 }}
+              className={`py-2.5 rounded-lg font-black text-xs sm:text-sm transition-all flex items-center justify-center gap-2 cursor-pointer ${
+                direction === 'Short'
+                  ? 'bg-gradient-to-r from-rose-600 to-red-600 text-white shadow-lg shadow-rose-500/30 border border-rose-400/40'
+                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/50'
+              }`}
               onClick={() => handleDirectionChange('Short')}
             >
-              <ArrowDownRight size={16} style={{ display: 'inline', marginRight: 4, verticalAlign: 'middle' }} />
-              {t.tradeForm.short}
+              <ArrowDownRight size={17} className={direction === 'Short' ? 'text-white' : 'text-rose-400'} />
+              <span>{t.tradeForm.short}</span>
             </motion.button>
           </div>
         </div>
 
         {/* Searchable Dropdown for Symbol */}
-        <div className="form-group" ref={dropdownRef} style={{ position: 'relative' }}>
-          <label className="form-label">
-            {t.tradeForm.searchCoinLabel}
-            {isFetchingPrice && <span style={{ color: '#06b6d4', textTransform: 'none', marginLeft: '0.5rem' }}>...</span>}
-          </label>
-          <div className="search-dropdown-container">
-            <div style={{ position: 'relative' }}>
+        <div className="relative" ref={dropdownRef}>
+          <div className="flex items-center justify-between mb-1.5">
+            <label className="text-[11px] font-extrabold text-slate-400 uppercase tracking-wider">
+              {t.tradeForm.searchCoinLabel}
+            </label>
+            {isFetchingPrice && (
+              <span className="text-cyan-400 font-semibold normal-case animate-pulse text-[11px]">
+                Updating market price...
+              </span>
+            )}
+          </div>
+          <div className="relative">
+            <div className="relative flex items-center">
+              <Search size={16} className="text-slate-400 absolute left-3.5 z-10 pointer-events-none shrink-0" />
               <input
                 type="text"
-                className="form-input"
-                style={{ paddingLeft: '2.25rem' }}
+                className="w-full bg-slate-950/90 border border-slate-800 focus:border-cyan-500 text-slate-100 font-extrabold font-mono text-sm py-2.5 pl-10 pr-3 rounded-xl outline-none shadow-inner transition-all uppercase placeholder:normal-case placeholder:font-normal placeholder:text-slate-500"
                 value={searchQuery}
                 onFocus={() => setIsDropdownOpen(true)}
                 onClick={() => setIsDropdownOpen(true)}
@@ -303,110 +318,155 @@ export const TradeForm: React.FC<TradeFormProps> = ({
                 placeholder={t.tradeForm.searchPlaceholder}
                 required
               />
-              <Search size={16} color="#64748b" style={{ position: 'absolute', left: '0.8rem', top: '50%', transform: 'translateY(-50%)' }} />
             </div>
 
             <AnimatePresence>
               {isDropdownOpen && (
                 <motion.div
-                  initial={{ opacity: 0, y: -6 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -6 }}
+                  initial={{ opacity: 0, y: -6, scale: 0.98 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: -6, scale: 0.98 }}
                   transition={{ duration: 0.15 }}
-                  className="search-dropdown-menu"
+                  className="absolute left-0 right-0 top-full mt-2 bg-slate-950/95 backdrop-blur-2xl border border-cyan-500/50 shadow-2xl shadow-cyan-950/80 rounded-xl max-h-64 overflow-y-auto z-50 divide-y divide-slate-800/60"
                 >
                   {filteredPairs.length === 0 ? (
-                    <div style={{ padding: '0.75rem', fontSize: '0.8rem', color: '#64748b', textAlign: 'center' }}>
-                      Symbol: "{searchQuery.toUpperCase()}"
+                    <div className="p-3 text-xs text-slate-400 text-center font-mono">
+                      No exact match for "<span className="text-cyan-400 font-bold">{searchQuery.toUpperCase()}</span>". Custom symbol selected.
                     </div>
                   ) : (
-                    filteredPairs.map((p) => (
-                      <div
-                        key={p.symbol}
-                        className={`search-dropdown-item ${symbol === p.symbol ? 'selected' : ''}`}
-                        onMouseDown={(e) => {
-                          e.preventDefault();
-                          handleSelectSymbol(p.symbol);
-                        }}
-                      >
-                        <span style={{ fontWeight: 800, color: '#f8fafc' }}>{p.symbol}</span>
-                        <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>{p.name}</span>
-                      </div>
-                    ))
+                    filteredPairs.map((p) => {
+                      const isSelected = symbol === p.symbol;
+                      return (
+                        <div
+                          key={p.symbol}
+                          className={`p-2.5 flex items-center justify-between cursor-pointer transition-all ${
+                            isSelected
+                              ? 'bg-cyan-500/20 border-l-4 border-l-cyan-400 text-white font-extrabold'
+                              : 'hover:bg-slate-900 hover:text-cyan-300 text-slate-200'
+                          }`}
+                          onMouseDown={(e) => {
+                            e.preventDefault();
+                            handleSelectSymbol(p.symbol);
+                          }}
+                        >
+                          <div className="flex items-center gap-2">
+                            <span className="bg-cyan-500/15 text-cyan-300 border border-cyan-500/30 px-2 py-0.5 rounded text-xs font-mono font-black">
+                              {p.symbol}
+                            </span>
+                            <span className="text-xs font-semibold text-slate-300">{p.name}</span>
+                          </div>
+                          {isSelected && <span className="text-xs text-cyan-400 font-black">✓ Active</span>}
+                        </div>
+                      );
+                    })
                   )}
                 </motion.div>
               )}
             </AnimatePresence>
           </div>
+
+          {/* Quick Popular Coin Tags */}
+          <div className="flex items-center gap-1.5 mt-2 overflow-x-auto scrollbar-none">
+            <span className="text-[10px] font-bold text-slate-500 uppercase shrink-0">Popular:</span>
+            {POPULAR_TAGS.map((tag) => (
+              <button
+                key={tag}
+                type="button"
+                onClick={() => handleSelectSymbol(tag)}
+                className={`text-[11px] font-mono font-extrabold px-2 py-0.5 rounded-lg border transition-all cursor-pointer shrink-0 ${
+                  symbol === tag
+                    ? 'bg-cyan-500/20 border-cyan-500/60 text-cyan-300'
+                    : 'bg-slate-950/60 border-slate-800 text-slate-400 hover:text-slate-200 hover:border-slate-700'
+                }`}
+              >
+                {tag.replace('USDT', '')}
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* Timeframe & Leverage */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
-          <div className="form-group">
-            <label className="form-label">{t.tradeForm.timeframe}</label>
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="text-[11px] font-extrabold text-slate-400 uppercase tracking-wider mb-1 block">
+              {t.tradeForm.timeframe}
+            </label>
             <select
-              className="form-select"
+              className="w-full bg-slate-950/90 border border-slate-800 focus:border-cyan-500 text-slate-100 font-extrabold font-mono text-xs sm:text-sm py-2 px-2.5 rounded-xl outline-none transition-all cursor-pointer"
               value={timeframe}
               onChange={(e) => setTimeframe(e.target.value as Timeframe)}
             >
-              <option value="M1">M1 (1 Min)</option>
-              <option value="M5">M5 (5 Mins)</option>
-              <option value="M15">M15 (15 Mins)</option>
-              <option value="M30">M30 (30 Mins)</option>
-              <option value="H1">H1 (1 Hour)</option>
-              <option value="H4">H4 (4 Hours)</option>
-              <option value="D1">D1 (1 Day)</option>
+              <option value="M1" className="bg-slate-900 text-slate-100 font-bold">M1 (1m)</option>
+              <option value="M5" className="bg-slate-900 text-slate-100 font-bold">M5 (5m)</option>
+              <option value="M15" className="bg-slate-900 text-slate-100 font-bold">M15 (15m)</option>
+              <option value="M30" className="bg-slate-900 text-slate-100 font-bold">M30 (30m)</option>
+              <option value="H1" className="bg-slate-900 text-slate-100 font-bold">H1 (1h)</option>
+              <option value="H4" className="bg-slate-900 text-slate-100 font-bold">H4 (4h)</option>
+              <option value="D1" className="bg-slate-900 text-slate-100 font-bold">D1 (1d)</option>
             </select>
           </div>
 
-          <div className="form-group">
-            <label className="form-label">{t.tradeForm.leverage}</label>
-            <input
-              type="number"
-              className="form-input"
-              value={leverage}
-              onChange={(e) => setLeverage(Number(e.target.value))}
-              min={1}
-              max={125}
-              required
-            />
+          <div>
+            <label className="text-[11px] font-extrabold text-slate-400 uppercase tracking-wider mb-1 block">
+              {t.tradeForm.leverage}
+            </label>
+            <div className="relative flex items-center">
+              <input
+                type="number"
+                className="w-full bg-slate-950/90 border border-slate-800 focus:border-cyan-500 text-slate-100 font-extrabold font-mono text-xs sm:text-sm py-2 px-2.5 pr-8 rounded-xl outline-none transition-all"
+                value={leverage}
+                onChange={(e) => setLeverage(Number(e.target.value))}
+                min={1}
+                max={125}
+                required
+              />
+              <span className="absolute right-3 text-xs font-black text-cyan-400 pointer-events-none">x</span>
+            </div>
           </div>
         </div>
 
         {/* Entry, Stop Loss, Take Profit */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.75rem' }}>
-          <div className="form-group">
-            <label className="form-label">{t.tradeForm.entryPrice}</label>
+        <div className="grid grid-cols-3 gap-2.5">
+          <div>
+            <label className="text-[10px] font-extrabold text-slate-400 uppercase tracking-tight mb-1 block truncate">
+              ENTRY ($)
+            </label>
             <input
               type="number"
               step="any"
-              className="form-input"
+              className="w-full bg-slate-950/90 border border-slate-800 focus:border-cyan-500 text-slate-100 font-extrabold font-mono text-xs py-2 px-2 rounded-xl outline-none transition-all"
               value={entryPrice}
               onChange={(e) => setEntryPrice(Number(e.target.value))}
               required
             />
           </div>
 
-          <div className="form-group">
-            <label className="form-label">{t.tradeForm.stopLoss}</label>
+          <div>
+            <label className="text-[10px] font-extrabold text-rose-400/90 uppercase tracking-tight mb-1 block truncate">
+              STOP LOSS ($)
+            </label>
             <input
               type="number"
               step="any"
-              className="form-input"
-              style={{ borderColor: liveMetrics.slDistance <= 0 ? '#f43f5e' : undefined }}
+              className={`w-full bg-slate-950/90 border ${
+                liveMetrics.slDistance <= 0 ? 'border-rose-500 text-rose-300' : 'border-slate-800 focus:border-cyan-500 text-slate-100'
+              } font-extrabold font-mono text-xs py-2 px-2 rounded-xl outline-none transition-all`}
               value={stopLoss}
               onChange={(e) => setStopLoss(Number(e.target.value))}
               required
             />
           </div>
 
-          <div className="form-group">
-            <label className="form-label">{t.tradeForm.takeProfit}</label>
+          <div>
+            <label className="text-[10px] font-extrabold text-emerald-400/90 uppercase tracking-tight mb-1 block truncate">
+              TAKE PROFIT ($)
+            </label>
             <input
               type="number"
               step="any"
-              className="form-input"
-              style={{ borderColor: liveMetrics.tpDistance <= 0 ? '#f43f5e' : undefined }}
+              className={`w-full bg-slate-950/90 border ${
+                liveMetrics.tpDistance <= 0 ? 'border-rose-500 text-rose-300' : 'border-slate-800 focus:border-cyan-500 text-slate-100'
+              } font-extrabold font-mono text-xs py-2 px-2 rounded-xl outline-none transition-all`}
               value={takeProfit}
               onChange={(e) => setTakeProfit(Number(e.target.value))}
               required
@@ -415,35 +475,63 @@ export const TradeForm: React.FC<TradeFormProps> = ({
         </div>
 
         {/* Quick R:R Preset Buttons */}
-        <div style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <span style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 700 }}>{t.tradeForm.quickPresets}</span>
-          <div className="rr-presets">
-            <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} type="button" className="btn-rr" onClick={() => applyTargetsByRR(entryPrice, direction, 1.5)}>1:1.5 R:R</motion.button>
-            <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} type="button" className="btn-rr" onClick={() => applyTargetsByRR(entryPrice, direction, 2.0)}>1:2 R:R</motion.button>
-            <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} type="button" className="btn-rr" onClick={() => applyTargetsByRR(entryPrice, direction, 3.0)}>1:3 R:R</motion.button>
+        <div className="flex items-center justify-between gap-1.5 py-1 bg-slate-950/40 px-2.5 rounded-xl border border-slate-800/40">
+          <span className="text-[11px] font-bold text-slate-400 whitespace-nowrap">{t.tradeForm.quickPresets}</span>
+          <div className="flex items-center gap-1.5">
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              type="button"
+              className="px-2.5 py-0.5 text-[11px] font-mono font-black text-cyan-300 bg-cyan-500/10 border border-cyan-500/30 hover:bg-cyan-500/20 rounded-lg transition-all cursor-pointer"
+              onClick={() => applyTargetsByRR(entryPrice, direction, 1.5)}
+            >
+              1:1.5
+            </motion.button>
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              type="button"
+              className="px-2.5 py-0.5 text-[11px] font-mono font-black text-cyan-300 bg-cyan-500/10 border border-cyan-500/30 hover:bg-cyan-500/20 rounded-lg transition-all cursor-pointer"
+              onClick={() => applyTargetsByRR(entryPrice, direction, 2.0)}
+            >
+              1:2.0
+            </motion.button>
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              type="button"
+              className="px-2.5 py-0.5 text-[11px] font-mono font-black text-cyan-300 bg-cyan-500/10 border border-cyan-500/30 hover:bg-cyan-500/20 rounded-lg transition-all cursor-pointer"
+              onClick={() => applyTargetsByRR(entryPrice, direction, 3.0)}
+            >
+              1:3.0
+            </motion.button>
           </div>
         </div>
 
         {/* Account Balance & Risk Percent */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
-          <div className="form-group">
-            <label className="form-label">{t.tradeForm.accountBalance}</label>
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="text-[11px] font-extrabold text-slate-400 uppercase tracking-wider mb-1 block">
+              {t.tradeForm.accountBalance}
+            </label>
             <input
               type="number"
               step="any"
-              className="form-input"
+              className="w-full bg-slate-950/90 border border-slate-800 focus:border-cyan-500 text-slate-100 font-extrabold font-mono text-xs sm:text-sm py-2 px-2.5 rounded-xl outline-none transition-all"
               value={accountBalance}
               onChange={(e) => setAccountBalance(Number(e.target.value))}
               required
             />
           </div>
 
-          <div className="form-group">
-            <label className="form-label">{t.tradeForm.riskPercent}</label>
+          <div>
+            <label className="text-[11px] font-extrabold text-slate-400 uppercase tracking-wider mb-1 block">
+              {t.tradeForm.riskPercent}
+            </label>
             <input
               type="number"
               step="0.1"
-              className="form-input"
+              className="w-full bg-slate-950/90 border border-slate-800 focus:border-cyan-500 text-slate-100 font-extrabold font-mono text-xs sm:text-sm py-2 px-2.5 rounded-xl outline-none transition-all"
               value={riskPercent}
               onChange={(e) => setRiskPercent(Number(e.target.value))}
               min={0.1}
@@ -453,34 +541,38 @@ export const TradeForm: React.FC<TradeFormProps> = ({
           </div>
         </div>
 
-        {/* Live Risk Metrics Bar */}
-        <div className="metrics-live-bar">
-          <div className="metric-item">
-            <div className="metric-label">{t.tradeForm.riskAmount}</div>
-            <div className="metric-value">${liveMetrics.riskAmount.toLocaleString(undefined, { maximumFractionDigits: 2 })}</div>
-          </div>
-          <div className="metric-item">
-            <div className="metric-label">{t.tradeForm.rrRatio}</div>
-            <div className="metric-value" style={{ color: liveMetrics.rrRatio < 1 ? '#f43f5e' : liveMetrics.rrRatio >= 2 ? '#10b981' : '#06b6d4' }}>
-              1 : {liveMetrics.rrRatio.toFixed(2)}
+        {/* Live Risk Metrics Cards Grid */}
+        <div className="grid grid-cols-4 gap-2 bg-slate-950/80 p-3 rounded-xl border border-slate-800 text-center shadow-inner">
+          <div>
+            <div className="text-[10px] font-bold text-slate-500 uppercase truncate">RỦI RO</div>
+            <div className="text-xs font-mono font-black text-cyan-400 mt-0.5">
+              ${liveMetrics.riskAmount.toLocaleString(undefined, { maximumFractionDigits: 2 })}
             </div>
           </div>
-          <div className="metric-item">
-            <div className="metric-label">Position Size</div>
-            <div className="metric-value">{liveMetrics.positionSize.toFixed(4)}</div>
+          <div>
+            <div className="text-[10px] font-bold text-slate-500 uppercase truncate">TỶ LỆ R:R</div>
+            <div className={`text-xs font-mono font-black mt-0.5 ${liveMetrics.rrRatio < 1 ? 'text-rose-400' : liveMetrics.rrRatio >= 2 ? 'text-emerald-400' : 'text-amber-400'}`}>
+              1:{liveMetrics.rrRatio.toFixed(2)}
+            </div>
           </div>
-          <div className="metric-item">
-            <div className="metric-label">Req Margin</div>
-            <div className="metric-value" style={{ color: liveMetrics.isMarginExceeded ? '#f43f5e' : undefined }}>
+          <div>
+            <div className="text-[10px] font-bold text-slate-500 uppercase truncate">POSITION</div>
+            <div className="text-xs font-mono font-black text-slate-200 mt-0.5">
+              {liveMetrics.positionSize.toFixed(4)}
+            </div>
+          </div>
+          <div>
+            <div className="text-[10px] font-bold text-slate-500 uppercase truncate">MARGIN</div>
+            <div className={`text-xs font-mono font-black mt-0.5 ${liveMetrics.isMarginExceeded ? 'text-rose-400' : 'text-slate-200'}`}>
               ${liveMetrics.marginRequired.toLocaleString(undefined, { maximumFractionDigits: 2 })}
             </div>
           </div>
         </div>
 
         {liveMetrics.isMarginExceeded && (
-          <div style={{ fontSize: '0.8rem', color: '#f43f5e', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-            <AlertCircle size={14} />
-            Margin required (${liveMetrics.marginRequired.toFixed(2)}) exceeds account balance!
+          <div className="text-xs text-rose-400 font-bold bg-rose-500/10 border border-rose-500/30 p-2 rounded-lg flex items-center gap-1.5">
+            <AlertCircle size={15} className="shrink-0 text-rose-400" />
+            <span>Margin (${liveMetrics.marginRequired.toFixed(2)}) exceeds balance!</span>
           </div>
         )}
 
@@ -489,18 +581,18 @@ export const TradeForm: React.FC<TradeFormProps> = ({
           type="submit"
           whileHover={{ scale: 1.01 }}
           whileTap={{ scale: 0.98 }}
-          className="btn-submit"
+          className="w-full btn-cyber-primary text-white font-black text-xs sm:text-sm py-3.5 px-4 rounded-xl shadow-xl shadow-cyan-500/25 tracking-wider uppercase flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed transition-all mt-2"
           disabled={isLoading || !liveMetrics.isValidSetup}
         >
           {isLoading ? (
             <>
-              <div className="spinner" />
-              {t.tradeForm.evaluating}
+              <RefreshCw size={17} className="animate-spin" />
+              <span>{t.tradeForm.evaluating}</span>
             </>
           ) : (
             <>
-              <Play size={18} fill="currentColor" />
-              {t.tradeForm.submitBtn}
+              <Play size={17} fill="currentColor" />
+              <span>{t.tradeForm.submitBtn}</span>
             </>
           )}
         </motion.button>

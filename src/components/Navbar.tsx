@@ -20,50 +20,75 @@ export const Navbar: React.FC<NavbarProps> = ({
 }) => {
   const { language, setLanguage, t } = useLanguage();
 
-  const tabs = [
+  const tabs: { id: WorkspaceTab; label: string; icon: any; badge?: string; count?: number }[] = [
     { id: 'terminal', label: t.nav.tabTerminal, icon: LayoutDashboard },
-    { id: 'analyzer', label: t.nav.tabAnalyzer, icon: Sparkles },
+    { id: 'analyzer', label: t.nav.tabAnalyzer, icon: Sparkles, badge: 'AI' },
     { id: 'inspector', label: t.nav.tabInspector, icon: Target },
     { id: 'backtest', label: t.nav.tabBacktest, icon: FlaskConical },
-    { id: 'journal', label: `${t.nav.tabJournal} (${journalCount})`, icon: BookOpen }
-  ] as const;
+    { id: 'journal', label: t.nav.tabJournal, count: journalCount, icon: BookOpen }
+  ];
 
   return (
-    <header className="header-glass">
-      <div className="container" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.75rem 1.25rem' }}>
-        {/* Brand Logo */}
-        <motion.div
-          whileHover={{ scale: 1.02 }}
-          style={{ display: 'flex', alignItems: 'center', gap: '0.85rem', cursor: 'pointer' }}
-          onClick={() => setActiveTab('terminal')}
-        >
+    <header className="sticky top-0 z-50 border-b border-slate-800/80 bg-[#06080e]/90 backdrop-blur-2xl shadow-xl">
+      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 py-2.5 flex flex-col lg:flex-row items-center justify-between gap-3">
+        {/* Brand Logo & Mobile Language Controls */}
+        <div className="flex items-center justify-between w-full lg:w-auto">
           <motion.div
-            animate={{ rotate: [0, 5, -5, 0] }}
-            transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}
-            style={{
-              background: 'linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%)',
-              padding: '0.55rem',
-              borderRadius: '12px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              boxShadow: '0 0 16px rgba(6, 182, 212, 0.45)'
-            }}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            className="flex items-center gap-3 cursor-pointer group"
+            onClick={() => setActiveTab('terminal')}
           >
-            <Cpu size={24} color="#ffffff" />
-          </motion.div>
-          <div>
-            <h1 style={{ fontFamily: 'Outfit, sans-serif', fontSize: '1.35rem', fontWeight: 800, lineHeight: 1.1, letterSpacing: '-0.02em' }}>
-              Crypto Trade <span style={{ color: '#06b6d4' }}>Evaluator</span>
-            </h1>
-            <p style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 600, letterSpacing: '0.02em' }}>
-              {t.nav.brandSub}
-            </p>
-          </div>
-        </motion.div>
+            <div className="relative">
+              <motion.div
+                animate={{ rotate: [0, 10, -10, 0] }}
+                transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
+                className="bg-gradient-to-tr from-cyan-500 via-blue-600 to-indigo-600 p-2.5 rounded-xl shadow-lg shadow-cyan-500/25 group-hover:shadow-cyan-500/40 transition-shadow"
+              >
+                <Cpu size={22} className="text-white" />
+              </motion.div>
+              <span className="absolute -top-1 -right-1 flex h-3 w-3">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-3 w-3 bg-cyan-500"></span>
+              </span>
+            </div>
 
-        {/* Center Workspace Tabs with Animated Active Pill */}
-        <div className="nav-tabs" style={{ position: 'relative' }}>
+            <div>
+              <div className="flex items-center gap-2">
+                <h1 className="font-heading text-lg sm:text-xl font-black tracking-tight text-white flex items-center gap-1.5">
+                  Crypto Trade <span className="gradient-text-cyan">Evaluator</span>
+                </h1>
+                <span className="bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 text-[10px] font-extrabold px-1.5 py-0.5 rounded-full uppercase tracking-wider">
+                  v2.5
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-400 font-semibold tracking-wide hidden sm:block">
+                {t.nav.brandSub}
+              </p>
+            </div>
+          </motion.div>
+
+          {/* Mobile Language Switcher */}
+          <div className="flex lg:hidden items-center bg-slate-900/90 border border-slate-800 p-0.5 rounded-full text-xs font-mono">
+            <button
+              type="button"
+              onClick={() => setLanguage('vi')}
+              className={`px-2.5 py-0.5 rounded-full text-[11px] font-black transition-all ${language === 'vi' ? 'bg-cyan-500 text-white shadow-md shadow-cyan-500/30' : 'text-slate-400 hover:text-slate-200'}`}
+            >
+              VI
+            </button>
+            <button
+              type="button"
+              onClick={() => setLanguage('en')}
+              className={`px-2.5 py-0.5 rounded-full text-[11px] font-black transition-all ${language === 'en' ? 'bg-cyan-500 text-white shadow-md shadow-cyan-500/30' : 'text-slate-400 hover:text-slate-200'}`}
+            >
+              EN
+            </button>
+          </div>
+        </div>
+
+        {/* Center Navigation Tabs */}
+        <div className="flex items-center gap-1.5 bg-slate-950/80 border border-slate-800/80 p-1 rounded-xl max-w-full overflow-x-auto scrollbar-none w-full lg:w-auto justify-start lg:justify-center shadow-inner">
           {tabs.map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
@@ -71,124 +96,94 @@ export const Navbar: React.FC<NavbarProps> = ({
               <button
                 key={tab.id}
                 type="button"
-                className={`tab-btn ${isActive ? 'active' : ''}`}
-                onClick={() => setActiveTab(tab.id)}
-                style={{ position: 'relative', outline: 'none' }}
+                className={`relative px-3.5 py-2 rounded-lg text-xs font-bold transition-all whitespace-nowrap outline-none flex items-center gap-2 cursor-pointer ${isActive ? 'text-cyan-300 font-black' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/50'}`}
+                onClick={() => setActiveTab(tab.id as WorkspaceTab)}
               >
                 {isActive && (
                   <motion.div
                     layoutId="activeTabPill"
-                    transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-                    style={{
-                      position: 'absolute',
-                      inset: 0,
-                      background: 'rgba(6, 182, 212, 0.15)',
-                      border: '1px solid rgba(6, 182, 212, 0.4)',
-                      borderRadius: '8px',
-                      zIndex: 0
-                    }}
+                    transition={{ type: 'spring', stiffness: 450, damping: 35 }}
+                    className="absolute inset-0 bg-cyan-500/15 border border-cyan-500/40 rounded-lg shadow-sm shadow-cyan-500/20 z-0"
                   />
                 )}
-                <span style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                  <Icon size={16} />
+                <span className="relative z-10 flex items-center gap-2">
+                  <Icon size={16} className={isActive ? 'text-cyan-400' : 'text-slate-400'} />
                   {tab.label}
+                  {tab.badge && (
+                    <span className="bg-purple-500/20 text-purple-300 border border-purple-500/40 text-[9px] font-extrabold px-1.5 py-0.2 rounded-full">
+                      {tab.badge}
+                    </span>
+                  )}
+                  {tab.count !== undefined && (
+                    <span className={`text-[10px] font-extrabold px-1.5 py-0.2 rounded-full border ${isActive ? 'bg-cyan-500/20 border-cyan-400/40 text-cyan-300' : 'bg-slate-800 border-slate-700 text-slate-400'}`}>
+                      {tab.count}
+                    </span>
+                  )}
                 </span>
               </button>
             );
           })}
         </div>
 
-        {/* Right Status & Language Controls */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          {/* Language Selector Toggle */}
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            background: '#090d16',
-            border: '1px solid rgba(255, 255, 255, 0.12)',
-            padding: '0.2rem',
-            borderRadius: '9999px',
-            fontSize: '0.75rem',
-            fontWeight: 700
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', padding: '0 0.4rem', color: '#64748b' }}>
+        {/* Right Status Indicators & Desktop Language Selector */}
+        <div className="hidden lg:flex items-center gap-2.5">
+          {/* Language Switcher */}
+          <div className="flex items-center bg-slate-900/90 border border-slate-800/80 p-0.5 rounded-full font-mono">
+            <div className="px-2 text-slate-500">
               <Languages size={14} />
             </div>
             <button
               type="button"
               onClick={() => setLanguage('vi')}
-              style={{
-                background: language === 'vi' ? '#06b6d4' : 'transparent',
-                color: language === 'vi' ? '#ffffff' : '#94a3b8',
-                border: 'none',
-                padding: '0.25rem 0.6rem',
-                borderRadius: '9999px',
-                cursor: 'pointer',
-                fontWeight: 700,
-                fontSize: '0.72rem',
-                transition: 'all 0.2s ease',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.25rem'
-              }}
+              className={`px-2.5 py-0.5 rounded-full text-[11px] font-black transition-all cursor-pointer ${language === 'vi' ? 'bg-cyan-500 text-white shadow-md shadow-cyan-500/30' : 'text-slate-400 hover:text-slate-200'}`}
             >
-              🇻🇳 VI
+              VI
             </button>
             <button
               type="button"
               onClick={() => setLanguage('en')}
-              style={{
-                background: language === 'en' ? '#06b6d4' : 'transparent',
-                color: language === 'en' ? '#ffffff' : '#94a3b8',
-                border: 'none',
-                padding: '0.25rem 0.6rem',
-                borderRadius: '9999px',
-                cursor: 'pointer',
-                fontWeight: 700,
-                fontSize: '0.72rem',
-                transition: 'all 0.2s ease',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.25rem'
-              }}
+              className={`px-2.5 py-0.5 rounded-full text-[11px] font-black transition-all cursor-pointer ${language === 'en' ? 'bg-cyan-500 text-white shadow-md shadow-cyan-500/30' : 'text-slate-400 hover:text-slate-200'}`}
             >
-              🇺🇸 EN
+              EN
             </button>
           </div>
 
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.4rem',
-            background: '#090d16',
-            border: '1px solid rgba(255, 255, 255, 0.08)',
-            padding: '0.35rem 0.75rem',
-            borderRadius: '9999px',
-            fontSize: '0.72rem',
-            fontWeight: 700
-          }}>
-            <ShieldCheck size={14} color="#10b981" />
-            <span style={{ color: '#94a3b8' }}>{t.nav.engineReady}</span>
+          {/* Engine Status Badge */}
+          <div className="flex items-center gap-1.5 bg-slate-900/90 border border-slate-800/80 px-3 py-1.5 rounded-full text-xs font-bold text-slate-300">
+            <ShieldCheck size={14} className="text-emerald-400" />
+            <span className="text-[11px] text-slate-400">{t.nav.engineReady}</span>
           </div>
 
+          {/* API Status Indicator */}
           <motion.div
             animate={apiStatus === 'online' ? { opacity: [0.8, 1, 0.8] } : {}}
             transition={{ duration: 2, repeat: Infinity }}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.4rem',
-              background: '#090d16',
-              border: '1px solid rgba(255, 255, 255, 0.08)',
-              padding: '0.35rem 0.75rem',
-              borderRadius: '9999px',
-              fontSize: '0.72rem',
-              fontWeight: 700
-            }}
+            className="flex items-center gap-1.5 bg-slate-900/90 border border-slate-800/80 px-3 py-1.5 rounded-full text-xs font-bold"
           >
-            <Activity size={14} color={apiStatus === 'online' ? '#10b981' : apiStatus === 'offline' ? '#f43f5e' : '#f59e0b'} />
-            <span style={{ textTransform: 'capitalize', color: apiStatus === 'online' ? '#10b981' : apiStatus === 'offline' ? '#f43f5e' : '#f59e0b' }}>
-              {apiStatus === 'online' ? t.nav.apiOnline : apiStatus === 'offline' ? t.nav.apiOffline : t.nav.apiChecking}
+            <Activity
+              size={14}
+              className={
+                apiStatus === 'online'
+                  ? 'text-emerald-400'
+                  : apiStatus === 'offline'
+                  ? 'text-rose-400'
+                  : 'text-amber-400 animate-spin'
+              }
+            />
+            <span
+              className={`text-[11px] font-bold ${
+                apiStatus === 'online'
+                  ? 'text-emerald-400'
+                  : apiStatus === 'offline'
+                  ? 'text-rose-400'
+                  : 'text-amber-400'
+              }`}
+            >
+              {apiStatus === 'online'
+                ? t.nav.apiOnline
+                : apiStatus === 'offline'
+                ? t.nav.apiOffline
+                : t.nav.apiChecking}
             </span>
           </motion.div>
         </div>

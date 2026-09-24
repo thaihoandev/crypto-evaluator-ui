@@ -10,61 +10,65 @@ interface MarketSnapshotCardProps {
 export const MarketSnapshotCard: React.FC<MarketSnapshotCardProps> = ({ snapshot, symbol }) => {
   const formatPrice = (val: number) => val.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 4 });
 
-  const getRsiColor = (rsi: number) => {
-    if (rsi > 70) return '#f43f5e'; // overbought
-    if (rsi < 30) return '#10b981'; // oversold
-    return '#06b6d4'; // neutral
+  const getRsiColorClass = (rsi: number) => {
+    if (rsi > 70) return 'text-rose-400'; // overbought
+    if (rsi < 30) return 'text-emerald-400'; // oversold
+    return 'text-cyan-400'; // neutral
   };
 
   return (
-    <div className="card">
-      <div className="card-title">
-        <LineChart size={18} color="#06b6d4" />
-        Market Snapshot ({symbol})
+    <div className="glass-panel p-5 rounded-2xl shadow-2xl border border-slate-800/80 space-y-4">
+      <div className="flex items-center gap-2 pb-3 border-b border-slate-800/80">
+        <div className="p-2 rounded-lg bg-cyan-500/10 border border-cyan-500/30 text-cyan-400">
+          <LineChart size={18} />
+        </div>
+        <h3 className="font-heading font-black text-sm text-slate-100 uppercase tracking-wider">
+          Market Snapshot ({symbol})
+        </h3>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
-        <div style={{ background: '#0a0e16', border: '1px solid rgba(255,255,255,0.06)', padding: '0.75rem', borderRadius: '8px' }}>
-          <div style={{ fontSize: '0.68rem', color: '#64748b', fontWeight: 700, textTransform: 'uppercase' }}>CURRENT PRICE</div>
-          <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#f8fafc', fontFamily: 'JetBrains Mono, monospace' }}>${formatPrice(snapshot.currentPrice)}</div>
+      <div className="grid grid-cols-2 gap-3">
+        <div className="bg-slate-950/80 border border-slate-800 p-3 rounded-xl">
+          <div className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider">CURRENT PRICE</div>
+          <div className="text-base font-mono font-black text-slate-100 mt-0.5">${formatPrice(snapshot.currentPrice)}</div>
         </div>
 
-        <div style={{ background: '#0a0e16', border: '1px solid rgba(255,255,255,0.06)', padding: '0.75rem', borderRadius: '8px' }}>
-          <div style={{ fontSize: '0.68rem', color: '#64748b', fontWeight: 700, textTransform: 'uppercase' }}>RSI (14)</div>
-          <div style={{ fontSize: '1.1rem', fontWeight: 800, color: getRsiColor(snapshot.rsi), fontFamily: 'JetBrains Mono, monospace' }}>
+        <div className="bg-slate-950/80 border border-slate-800 p-3 rounded-xl">
+          <div className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider">RSI (14)</div>
+          <div className={`text-base font-mono font-black mt-0.5 ${getRsiColorClass(snapshot.rsi)}`}>
             {snapshot.rsi.toFixed(1)}
           </div>
         </div>
 
-        <div style={{ background: '#0a0e16', border: '1px solid rgba(255,255,255,0.06)', padding: '0.75rem', borderRadius: '8px' }}>
-          <div style={{ fontSize: '0.68rem', color: '#64748b', fontWeight: 700, textTransform: 'uppercase' }}>ATR (14)</div>
-          <div style={{ fontSize: '1rem', fontWeight: 800, color: '#94a3b8', fontFamily: 'JetBrains Mono, monospace' }}>{snapshot.atr.toFixed(2)}</div>
+        <div className="bg-slate-950/80 border border-slate-800 p-3 rounded-xl">
+          <div className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider">ATR (14)</div>
+          <div className="text-base font-mono font-black text-slate-300 mt-0.5">${snapshot.atr.toFixed(2)}</div>
         </div>
 
-        <div style={{ background: '#0a0e16', border: '1px solid rgba(255,255,255,0.06)', padding: '0.75rem', borderRadius: '8px' }}>
-          <div style={{ fontSize: '0.68rem', color: '#64748b', fontWeight: 700, textTransform: 'uppercase' }}>VOLUME RATIO</div>
-          <div style={{ fontSize: '1rem', fontWeight: 800, color: snapshot.volumeRatio >= 1.2 ? '#10b981' : snapshot.volumeRatio < 0.8 ? '#f59e0b' : '#06b6d4', fontFamily: 'JetBrains Mono, monospace' }}>
+        <div className="bg-slate-950/80 border border-slate-800 p-3 rounded-xl">
+          <div className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider">VOLUME RATIO</div>
+          <div className={`text-base font-mono font-black mt-0.5 ${snapshot.volumeRatio >= 1.2 ? 'text-emerald-400' : snapshot.volumeRatio < 0.8 ? 'text-amber-400' : 'text-cyan-400'}`}>
             {snapshot.volumeRatio.toFixed(2)}x
           </div>
         </div>
       </div>
 
       {/* Moving Averages List */}
-      <div style={{ marginTop: '1rem', background: '#0a0e16', padding: '0.75rem', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.06)' }}>
-        <div style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 700, marginBottom: '0.5rem', textTransform: 'uppercase' }}>
+      <div className="bg-slate-950/80 border border-slate-800 p-3.5 rounded-xl space-y-2">
+        <div className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider">
           Exponential Moving Averages
         </div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.825rem', marginBottom: '0.35rem', fontFamily: 'JetBrains Mono, monospace' }}>
-          <span style={{ color: '#06b6d4', fontWeight: 700 }}>EMA 20</span>
-          <span style={{ fontWeight: 700 }}>${formatPrice(snapshot.ema20)}</span>
+        <div className="flex justify-between items-center text-xs font-mono">
+          <span className="text-cyan-400 font-bold">EMA 20</span>
+          <span className="font-black text-slate-100">${formatPrice(snapshot.ema20)}</span>
         </div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.825rem', marginBottom: '0.35rem', fontFamily: 'JetBrains Mono, monospace' }}>
-          <span style={{ color: '#3b82f6', fontWeight: 700 }}>EMA 50</span>
-          <span style={{ fontWeight: 700 }}>${formatPrice(snapshot.ema50)}</span>
+        <div className="flex justify-between items-center text-xs font-mono">
+          <span className="text-blue-400 font-bold">EMA 50</span>
+          <span className="font-black text-slate-100">${formatPrice(snapshot.ema50)}</span>
         </div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.825rem', fontFamily: 'JetBrains Mono, monospace' }}>
-          <span style={{ color: '#8b5cf6', fontWeight: 700 }}>EMA 200</span>
-          <span style={{ fontWeight: 700 }}>${formatPrice(snapshot.ema200)}</span>
+        <div className="flex justify-between items-center text-xs font-mono">
+          <span className="text-purple-400 font-bold">EMA 200</span>
+          <span className="font-black text-slate-100">${formatPrice(snapshot.ema200)}</span>
         </div>
       </div>
     </div>

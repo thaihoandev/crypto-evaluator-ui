@@ -1,6 +1,6 @@
 import React from 'react';
 import type { TradeWarning } from '../types/trade';
-import { ShieldAlert, AlertTriangle, AlertOctagon, Info } from 'lucide-react';
+import { ShieldAlert, AlertTriangle, AlertOctagon, Info, CheckCircle2 } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 
 interface RiskWarningsPanelProps {
@@ -12,49 +12,64 @@ export const RiskWarningsPanel: React.FC<RiskWarningsPanelProps> = ({ warnings }
 
   if (!warnings || warnings.length === 0) {
     return (
-      <div className="card">
-        <div className="card-title">
-          <ShieldAlert size={18} color="#10b981" />
-          {t.riskWarnings.title}
+      <div className="glass-panel p-5 rounded-2xl shadow-2xl border border-slate-800/80 space-y-4">
+        <div className="flex items-center gap-2 pb-3 border-b border-slate-800/80">
+          <div className="p-2 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-400">
+            <ShieldAlert size={18} />
+          </div>
+          <h3 className="font-heading font-black text-sm text-slate-100 uppercase tracking-wider">
+            {t.riskWarnings.title}
+          </h3>
         </div>
-        <div style={{ padding: '1rem', background: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.3)', borderRadius: '8px', color: '#6ee7b7', fontSize: '0.85rem' }}>
-          ✓ {t.riskWarnings.noWarnings}
+        <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs font-extrabold flex items-center gap-2">
+          <CheckCircle2 size={18} className="text-emerald-400 shrink-0" />
+          <span>✓ {t.riskWarnings.noWarnings}</span>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="card">
-      <div className="card-title">
-        <ShieldAlert size={18} color="#f59e0b" />
-        {t.riskWarnings.title} ({warnings.length})
+    <div className="glass-panel p-5 rounded-2xl shadow-2xl border border-slate-800/80 space-y-4">
+      <div className="flex items-center gap-2 pb-3 border-b border-slate-800/80">
+        <div className="p-2 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-400">
+          <ShieldAlert size={18} />
+        </div>
+        <h3 className="font-heading font-black text-sm text-slate-100 uppercase tracking-wider">
+          {t.riskWarnings.title} ({warnings.length})
+        </h3>
       </div>
 
-      <div>
+      <div className="space-y-2.5">
         {warnings.map((w, index) => {
           const isCritical = w.severity === 'Critical';
           const isWarning = w.severity === 'Warning';
 
+          const bgClass = isCritical
+            ? 'bg-rose-500/10 border-rose-500/30 text-rose-300'
+            : isWarning
+            ? 'bg-amber-500/10 border-amber-500/30 text-amber-300'
+            : 'bg-blue-500/10 border-blue-500/30 text-blue-300';
+
           return (
             <div
               key={index}
-              className={`warning-item ${isCritical ? 'critical' : isWarning ? 'warning' : 'info'}`}
+              className={`p-3.5 rounded-xl border flex items-start gap-3 text-xs font-medium ${bgClass}`}
             >
-              <div style={{ marginTop: '2px' }}>
+              <div className="mt-0.5 shrink-0">
                 {isCritical ? (
-                  <AlertOctagon size={18} color="#f43f5e" />
+                  <AlertOctagon size={18} className="text-rose-400" />
                 ) : isWarning ? (
-                  <AlertTriangle size={18} color="#f59e0b" />
+                  <AlertTriangle size={18} className="text-amber-400" />
                 ) : (
-                  <Info size={18} color="#3b82f6" />
+                  <Info size={18} className="text-blue-400" />
                 )}
               </div>
-              <div>
-                <div style={{ fontWeight: 800, fontSize: '0.78rem', textTransform: 'uppercase', marginBottom: '0.1rem' }}>
+              <div className="space-y-0.5">
+                <div className="font-black uppercase tracking-wide text-[10px]">
                   [{w.code}] {w.severity}
                 </div>
-                <div>{w.message}</div>
+                <div className="leading-relaxed">{w.message}</div>
               </div>
             </div>
           );

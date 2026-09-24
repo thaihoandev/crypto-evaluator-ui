@@ -145,39 +145,34 @@ export const MarketAnalyzerWidget: React.FC<MarketAnalyzerWidgetProps> = ({
   }, [availableSymbols]);
 
   return (
-    <div className="card" style={{ padding: '1.5rem' }}>
+    <div className="glass-panel rounded-2xl p-5 sm:p-6 space-y-5 shadow-2xl border border-slate-800/80">
       {/* ── Widget Header ── */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem', flexWrap: 'wrap', gap: '0.75rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
-          <div style={{
-            background: 'linear-gradient(135deg, rgba(6, 182, 212, 0.2), rgba(59, 130, 246, 0.2))',
-            padding: '0.55rem',
-            borderRadius: '10px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            border: '1px solid rgba(6, 182, 212, 0.3)'
-          }}>
-            <Sparkles size={20} color="#06b6d4" />
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-slate-800/80 pb-4">
+        <div className="flex items-center gap-3">
+          <div className="p-2.5 rounded-xl bg-purple-500/10 border border-purple-500/30 text-purple-400">
+            <Sparkles size={24} />
           </div>
           <div>
-            <h2 style={{ fontFamily: 'Outfit, sans-serif', fontSize: '1.25rem', fontWeight: 800, margin: 0, color: '#f8fafc' }}>
+            <h2 className="font-heading font-black text-lg sm:text-xl text-slate-100 flex items-center gap-2">
               {t.marketAnalyzer.title}
+              <span className="bg-purple-500/20 text-purple-300 border border-purple-500/40 text-[10px] font-extrabold px-2 py-0.5 rounded-full uppercase">
+                QUANT AI
+              </span>
             </h2>
-            <p style={{ fontSize: '0.78rem', color: '#64748b', margin: 0 }}>
+            <p className="text-xs text-slate-400 mt-0.5">
               {t.marketAnalyzer.subtitle}
             </p>
           </div>
         </div>
 
         {/* Form Controls Header */}
-        <form onSubmit={handleSearchSubmit} style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+        <form onSubmit={handleSearchSubmit} className="flex flex-wrap sm:flex-nowrap items-center gap-2.5 w-full lg:w-auto">
           {/* Symbol Searchable Input & Dropdown */}
-          <div ref={dropdownRef} style={{ position: 'relative', width: '220px' }}>
-            <div style={{ position: 'relative' }}>
+          <div ref={dropdownRef} className="relative flex-1 min-w-[150px] sm:w-60">
+            <div className="relative flex items-center">
               <input
                 type="text"
-                className="input-field"
+                className="w-full bg-slate-950/90 border border-slate-800 focus:border-cyan-500 text-slate-100 font-extrabold text-xs sm:text-sm py-2.5 pl-9 pr-3 rounded-xl outline-none transition-all uppercase placeholder:normal-case placeholder:font-normal placeholder:text-slate-500"
                 placeholder={t.marketAnalyzer.searchPlaceholder}
                 value={searchQuery}
                 onFocus={() => setIsDropdownOpen(true)}
@@ -185,49 +180,18 @@ export const MarketAnalyzerWidget: React.FC<MarketAnalyzerWidgetProps> = ({
                   setSearchQuery(e.target.value.toUpperCase());
                   setIsDropdownOpen(true);
                 }}
-                style={{
-                  width: '100%',
-                  paddingLeft: '2.2rem',
-                  fontSize: '0.85rem',
-                  fontWeight: 800,
-                  textTransform: 'uppercase'
-                }}
               />
               <Search
-                size={14}
-                color="#64748b"
-                style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}
+                size={16}
+                className="text-slate-400 absolute left-3 pointer-events-none shrink-0"
               />
             </div>
 
             {/* Dropdown Suggestions List */}
             {isDropdownOpen && (
-              <div style={{
-                position: 'absolute',
-                top: '100%',
-                left: 0,
-                right: 0,
-                marginTop: '0.35rem',
-                background: '#090d16',
-                border: '1px solid rgba(6, 182, 212, 0.35)',
-                borderRadius: '10px',
-                maxHeight: '240px',
-                overflowY: 'auto',
-                zIndex: 100,
-                boxShadow: '0 10px 30px rgba(0, 0, 0, 0.8)'
-              }}>
-                <div style={{
-                  padding: '0.4rem 0.75rem',
-                  background: 'rgba(6, 182, 212, 0.1)',
-                  fontSize: '0.68rem',
-                  fontWeight: 800,
-                  color: '#06b6d4',
-                  borderBottom: '1px solid rgba(6, 182, 212, 0.2)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.3rem'
-                }}>
-                  <Globe size={12} /> BINANCE FUTURES ({availableSymbols.length})
+              <div className="absolute left-0 right-0 top-full mt-2 bg-slate-950/95 backdrop-blur-2xl border border-cyan-500/50 shadow-2xl shadow-cyan-950/80 rounded-xl max-h-64 overflow-y-auto z-50 divide-y divide-slate-800/60">
+                <div className="px-3 py-2 bg-cyan-500/10 text-[11px] font-extrabold text-cyan-400 border-b border-cyan-500/20 flex items-center gap-1.5">
+                  <Globe size={13} /> BINANCE FUTURES ({availableSymbols.length})
                 </div>
 
                 {filteredSymbols.length > 0 ? (
@@ -235,32 +199,19 @@ export const MarketAnalyzerWidget: React.FC<MarketAnalyzerWidgetProps> = ({
                     <div
                       key={item.symbol}
                       onClick={() => selectSymbol(item.symbol)}
-                      style={{
-                        padding: '0.55rem 0.85rem',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        cursor: 'pointer',
-                        fontSize: '0.82rem',
-                        fontWeight: 700,
-                        borderBottom: '1px solid rgba(255, 255, 255, 0.04)',
-                        background: item.symbol === symbol ? 'rgba(6, 182, 212, 0.2)' : 'transparent',
-                        color: item.symbol === symbol ? '#06b6d4' : '#e2e8f0'
-                      }}
-                      onMouseEnter={(e) => {
-                        if (item.symbol !== symbol) e.currentTarget.style.background = 'rgba(255, 255, 255, 0.06)';
-                      }}
-                      onMouseLeave={(e) => {
-                        if (item.symbol !== symbol) e.currentTarget.style.background = 'transparent';
-                      }}
+                      className={`px-3.5 py-2.5 flex items-center justify-between cursor-pointer text-xs font-bold transition-all ${
+                        item.symbol === symbol
+                          ? 'bg-cyan-500/20 border-l-4 border-l-cyan-400 text-white font-black'
+                          : 'hover:bg-slate-900 text-slate-200'
+                      }`}
                     >
-                      <span>{item.symbol}</span>
-                      <span style={{ fontSize: '0.7rem', color: '#64748b', fontWeight: 600 }}>{item.name}</span>
+                      <span className="font-mono">{item.symbol}</span>
+                      <span className="text-[11px] text-slate-400 font-normal">{item.name}</span>
                     </div>
                   ))
                 ) : (
-                  <div style={{ padding: '0.75rem', fontSize: '0.78rem', color: '#94a3b8', textAlign: 'center' }}>
-                    Symbol: <strong>"{searchQuery}"</strong>
+                  <div className="p-3 text-xs text-slate-400 text-center font-mono">
+                    Symbol: <strong className="text-cyan-400">"{searchQuery}"</strong>
                   </div>
                 )}
               </div>
@@ -268,43 +219,33 @@ export const MarketAnalyzerWidget: React.FC<MarketAnalyzerWidgetProps> = ({
           </div>
 
           {/* Timeframe Select */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
-            <select
-              value={timeframe}
-              onChange={(e) => setTimeframe(e.target.value as Timeframe)}
-              className="input-field"
-              style={{ width: '90px', padding: '0.45rem 0.65rem', fontSize: '0.85rem', fontWeight: 700 }}
-            >
-              {TIMEFRAMES.map((tf) => (
-                <option key={tf} value={tf}>{tf}</option>
-              ))}
-            </select>
-          </div>
+          <select
+            value={timeframe}
+            onChange={(e) => setTimeframe(e.target.value as Timeframe)}
+            className="bg-slate-950/90 border border-slate-800 focus:border-cyan-500 text-slate-100 font-extrabold font-mono text-xs sm:text-sm py-2.5 px-3 rounded-xl outline-none transition-all cursor-pointer"
+          >
+            {TIMEFRAMES.map((tf) => (
+              <option key={tf} value={tf} className="bg-slate-900 text-slate-100 font-bold">
+                {tf}
+              </option>
+            ))}
+          </select>
 
           {/* Analyze Action Button */}
           <button
             type="submit"
             disabled={isLoading}
-            className="btn btn-primary"
-            style={{
-              padding: '0.52rem 1.2rem',
-              fontSize: '0.85rem',
-              fontWeight: 800,
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.5rem',
-              height: '38px'
-            }}
+            className="btn-cyber-primary text-white font-black text-xs sm:text-sm py-2.5 px-4 rounded-xl shadow-lg shadow-cyan-500/25 flex items-center justify-center gap-2 transition-all cursor-pointer shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isLoading ? (
               <>
-                <RefreshCw size={16} className="spin" />
-                {t.marketAnalyzer.analyzing}
+                <RefreshCw size={16} className="animate-spin text-white" />
+                <span>{t.marketAnalyzer.analyzing}</span>
               </>
             ) : (
               <>
                 <Sparkles size={16} />
-                {t.marketAnalyzer.analyzeBtn}
+                <span className="whitespace-nowrap">{t.marketAnalyzer.analyzeBtn}</span>
               </>
             )}
           </button>
@@ -312,8 +253,8 @@ export const MarketAnalyzerWidget: React.FC<MarketAnalyzerWidgetProps> = ({
       </div>
 
       {/* Quick Coin Tags Row */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap', marginBottom: '1.25rem' }}>
-        <span style={{ fontSize: '0.7rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', marginRight: '0.2rem' }}>
+      <div className="flex items-center gap-1.5 flex-wrap">
+        <span className="text-[11px] font-extrabold text-slate-500 uppercase tracking-wider mr-1">
           Pairs:
         </span>
         {quickCoinTags.map((tag) => (
@@ -321,17 +262,11 @@ export const MarketAnalyzerWidget: React.FC<MarketAnalyzerWidgetProps> = ({
             key={tag}
             type="button"
             onClick={() => selectSymbol(tag)}
-            style={{
-              background: symbol === tag ? 'rgba(6, 182, 212, 0.2)' : 'rgba(255, 255, 255, 0.04)',
-              border: `1px solid ${symbol === tag ? 'rgba(6, 182, 212, 0.5)' : 'rgba(255, 255, 255, 0.08)'}`,
-              color: symbol === tag ? '#06b6d4' : '#94a3b8',
-              borderRadius: '6px',
-              padding: '0.2rem 0.55rem',
-              fontSize: '0.72rem',
-              fontWeight: 700,
-              cursor: 'pointer',
-              transition: 'all 0.15s ease'
-            }}
+            className={`px-3 py-1 rounded-lg text-xs font-mono font-extrabold transition-all cursor-pointer ${
+              symbol === tag
+                ? 'bg-purple-500/20 text-purple-300 border border-purple-500/50 shadow-sm shadow-purple-500/20'
+                : 'bg-slate-950/60 text-slate-400 border border-slate-800 hover:text-slate-200 hover:border-slate-700'
+            }`}
           >
             {tag.replace('USDT', '')}
           </button>
@@ -340,65 +275,32 @@ export const MarketAnalyzerWidget: React.FC<MarketAnalyzerWidgetProps> = ({
 
       {/* Error State */}
       {errorMessage && (
-        <div style={{
-          background: 'rgba(244, 63, 94, 0.1)',
-          border: '1px solid rgba(244, 63, 94, 0.3)',
-          borderRadius: '10px',
-          padding: '0.85rem 1rem',
-          color: '#f43f5e',
-          fontSize: '0.85rem',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '0.5rem',
-          marginBottom: '1rem'
-        }}>
-          <AlertTriangle size={18} />
+        <div className="bg-rose-500/10 border border-rose-500/30 text-rose-300 rounded-xl p-4 flex items-center gap-2.5 text-xs font-bold">
+          <AlertTriangle size={18} className="shrink-0 text-rose-400" />
           <span>{errorMessage}</span>
         </div>
       )}
 
       {/* Empty Initial State */}
       {!analysis && !isLoading && (
-        <div style={{
-          background: 'rgba(15, 23, 42, 0.4)',
-          border: '1px dashed rgba(255, 255, 255, 0.12)',
-          borderRadius: '14px',
-          padding: '3rem 2rem',
-          textAlign: 'center',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center'
-        }}>
-          <div style={{
-            background: 'linear-gradient(135deg, rgba(6, 182, 212, 0.15), rgba(59, 130, 246, 0.15))',
-            padding: '1.1rem',
-            borderRadius: '50%',
-            marginBottom: '1rem'
-          }}>
-            <Bot size={36} color="#06b6d4" />
+        <div className="bg-slate-950/50 border border-dashed border-slate-800 rounded-2xl p-10 text-center flex flex-col items-center justify-center space-y-4">
+          <div className="p-4 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-cyan-400">
+            <Bot size={40} />
           </div>
-          <h3 style={{ fontFamily: 'Outfit, sans-serif', fontSize: '1.25rem', fontWeight: 800, margin: '0 0 0.4rem 0', color: '#f8fafc' }}>
-            {symbol} ({timeframe})
-          </h3>
-          <p style={{ color: '#94a3b8', maxWidth: '480px', fontSize: '0.85rem', lineHeight: 1.5, margin: '0 0 1.5rem 0' }}>
-            {t.marketAnalyzer.subtitle}
-          </p>
+          <div>
+            <h3 className="font-heading font-black text-lg text-slate-100">
+              {symbol} ({timeframe}) Market Setup Finder
+            </h3>
+            <p className="text-xs text-slate-400 max-w-md mx-auto mt-1 leading-relaxed">
+              {t.marketAnalyzer.subtitle}
+            </p>
+          </div>
           <button
             type="button"
             onClick={() => runAnalysis(symbol, timeframe)}
-            className="btn btn-primary"
-            style={{
-              padding: '0.65rem 1.6rem',
-              fontSize: '0.9rem',
-              fontWeight: 800,
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.5rem',
-              boxShadow: '0 0 20px rgba(6, 182, 212, 0.35)'
-            }}
+            className="btn-cyber-primary text-white font-black text-xs sm:text-sm py-3 px-6 rounded-xl shadow-xl shadow-cyan-500/30 flex items-center gap-2 cursor-pointer transition-all"
           >
-            <Zap size={18} />
+            <Zap size={18} fill="currentColor" />
             {t.marketAnalyzer.analyzeBtn} ({symbol})
           </button>
         </div>
@@ -406,9 +308,9 @@ export const MarketAnalyzerWidget: React.FC<MarketAnalyzerWidgetProps> = ({
 
       {/* Skeleton Loading State */}
       {isLoading && (
-        <div style={{ padding: '3rem 2rem', textAlign: 'center', color: '#64748b' }}>
-          <RefreshCw size={32} className="spin" style={{ marginBottom: '1rem', color: '#06b6d4' }} />
-          <p style={{ fontSize: '0.95rem', fontWeight: 700, color: '#f8fafc', margin: '0 0 0.3rem 0' }}>
+        <div className="p-12 text-center text-slate-400 space-y-3">
+          <RefreshCw size={36} className="animate-spin text-cyan-400 mx-auto" />
+          <p className="text-sm font-bold text-slate-200">
             {t.marketAnalyzer.analyzing} ({symbol})...
           </p>
         </div>
@@ -422,20 +324,16 @@ export const MarketAnalyzerWidget: React.FC<MarketAnalyzerWidgetProps> = ({
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
+            className="space-y-4"
           >
-            {/* Top Recommendation Banner */}
+            {/* Recommendation Banner */}
             <RecommendationBanner analysis={analysis} t={t} />
 
             {/* Technical Snapshot Bar */}
             <SnapshotSummaryBar snapshot={analysis.snapshot} />
 
             {/* Dual Setups Comparison Grid (Long vs Short) */}
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
-              gap: '1.25rem',
-              marginTop: '1.25rem'
-            }}>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
               <SetupCard
                 setup={analysis.longSetup}
                 symbol={analysis.symbol}
@@ -464,72 +362,43 @@ export const MarketAnalyzerWidget: React.FC<MarketAnalyzerWidgetProps> = ({
 // ── Sub-component: Recommendation Banner ─────────────────────────────────────
 const RecommendationBanner: React.FC<{ analysis: MarketAnalysisResponseDto; t: any }> = ({ analysis, t }) => {
   const rec = analysis.recommendation;
+  const isLong = rec === 'Long';
+  const isShort = rec === 'Short';
 
-  const recConfig = {
-    Long: {
-      bg: 'linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(6, 182, 212, 0.1) 100%)',
-      border: 'rgba(16, 185, 129, 0.4)',
-      text: '#10b981',
-      icon: TrendingUp,
-      title: t.marketAnalyzer.statusLong
-    },
-    Short: {
-      bg: 'linear-gradient(135deg, rgba(244, 63, 94, 0.15) 0%, rgba(225, 29, 72, 0.1) 100%)',
-      border: 'rgba(244, 63, 94, 0.4)',
-      text: '#f43f5e',
-      icon: TrendingDown,
-      title: t.marketAnalyzer.statusShort
-    },
-    Wait: {
-      bg: 'linear-gradient(135deg, rgba(245, 158, 11, 0.15) 0%, rgba(217, 119, 6, 0.1) 100%)',
-      border: 'rgba(245, 158, 11, 0.4)',
-      text: '#f59e0b',
-      icon: ShieldAlert,
-      title: t.marketAnalyzer.statusWait
-    }
-  }[rec];
+  const title = isLong ? t.marketAnalyzer.statusLong : isShort ? t.marketAnalyzer.statusShort : t.marketAnalyzer.statusWait;
+  const Icon = isLong ? TrendingUp : isShort ? TrendingDown : ShieldAlert;
 
-  const Icon = recConfig.icon;
+  const colorClass = isLong
+    ? 'bg-emerald-500/10 border-emerald-500/40 text-emerald-400'
+    : isShort
+    ? 'bg-rose-500/10 border-rose-500/40 text-rose-400'
+    : 'bg-amber-500/10 border-amber-500/40 text-amber-400';
 
   return (
-    <div style={{
-      background: recConfig.bg,
-      border: `1px solid ${recConfig.border}`,
-      borderRadius: '12px',
-      padding: '1.1rem 1.25rem',
-      marginBottom: '1.25rem'
-    }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-          <Icon size={22} color={recConfig.text} />
-          <h3 style={{ fontSize: '1.05rem', fontWeight: 800, color: recConfig.text, margin: 0 }}>
-            {recConfig.title}
+    <div className={`rounded-xl border p-4 sm:p-5 space-y-2.5 transition-all shadow-lg ${colorClass}`}>
+      <div className="flex items-center justify-between flex-wrap gap-2">
+        <div className="flex items-center gap-2.5">
+          <Icon size={22} className="shrink-0" />
+          <h3 className="text-base font-heading font-black tracking-tight">
+            {title}
           </h3>
         </div>
-        <div style={{ fontSize: '0.78rem', color: '#94a3b8', fontWeight: 600 }}>
+        <div className="text-xs font-mono font-bold text-slate-300 bg-slate-950/60 px-2.5 py-1 rounded-lg border border-slate-800">
           {analysis.symbol} • {analysis.timeframe}
         </div>
       </div>
 
-      <p style={{ fontSize: '0.85rem', color: '#e2e8f0', marginTop: '0.5rem', marginBottom: rec.toLowerCase() === 'wait' && analysis.blockingReasons.length > 0 ? '0.6rem' : 0, lineHeight: 1.4 }}>
-        <strong>{t.marketAnalyzer.rationale}</strong> {analysis.rationale}
+      <p className="text-xs sm:text-sm text-slate-200 leading-relaxed font-medium">
+        <strong className="text-white font-extrabold">{t.marketAnalyzer.rationale}</strong> {analysis.rationale}
       </p>
 
       {/* Blocking Reasons if Wait */}
       {rec === 'Wait' && analysis.blockingReasons.length > 0 && (
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem', marginTop: '0.5rem' }}>
+        <div className="flex flex-wrap gap-1.5 pt-1">
           {analysis.blockingReasons.map((reason) => (
             <span
               key={reason}
-              style={{
-                background: 'rgba(245, 158, 11, 0.15)',
-                border: '1px solid rgba(245, 158, 11, 0.3)',
-                color: '#fbbf24',
-                padding: '0.2rem 0.55rem',
-                borderRadius: '6px',
-                fontSize: '0.72rem',
-                fontWeight: 700
-              }}
+              className="bg-amber-500/20 border border-amber-500/40 text-amber-300 px-2.5 py-1 rounded-lg text-xs font-bold"
             >
               ⚠️ {reason}
             </span>
@@ -545,57 +414,45 @@ const SnapshotSummaryBar: React.FC<{ snapshot: any }> = ({ snapshot }) => {
   if (!snapshot) return null;
 
   return (
-    <div style={{
-      display: 'grid',
-      gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))',
-      gap: '0.6rem',
-      background: 'rgba(15, 23, 42, 0.6)',
-      border: '1px solid rgba(255, 255, 255, 0.06)',
-      borderRadius: '10px',
-      padding: '0.75rem 1rem'
-    }}>
+    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2.5 bg-slate-950/80 border border-slate-800 rounded-xl p-3 sm:p-4 text-center">
       <div>
-        <div style={{ fontSize: '0.68rem', color: '#64748b', fontWeight: 700 }}>PRICE</div>
-        <div style={{ fontSize: '0.92rem', fontWeight: 800, color: '#06b6d4' }}>
+        <div className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider">PRICE</div>
+        <div className="text-xs sm:text-sm font-mono font-black text-cyan-400 mt-0.5">
           ${snapshot.currentPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 6 })}
         </div>
       </div>
 
       <div>
-        <div style={{ fontSize: '0.68rem', color: '#64748b', fontWeight: 700 }}>EMA 20</div>
-        <div style={{ fontSize: '0.85rem', fontWeight: 700, color: '#f8fafc' }}>
+        <div className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider">EMA 20</div>
+        <div className="text-xs sm:text-sm font-mono font-bold text-slate-200 mt-0.5">
           ${snapshot.ema20.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 4 })}
         </div>
       </div>
 
       <div>
-        <div style={{ fontSize: '0.68rem', color: '#64748b', fontWeight: 700 }}>EMA 50</div>
-        <div style={{ fontSize: '0.85rem', fontWeight: 700, color: '#cbd5e1' }}>
+        <div className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider">EMA 50</div>
+        <div className="text-xs sm:text-sm font-mono font-bold text-slate-300 mt-0.5">
           ${snapshot.ema50.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 4 })}
         </div>
       </div>
 
       <div>
-        <div style={{ fontSize: '0.68rem', color: '#64748b', fontWeight: 700 }}>RSI (14)</div>
-        <div style={{
-          fontSize: '0.85rem',
-          fontWeight: 800,
-          color: snapshot.rsi >= 65 ? '#f43f5e' : snapshot.rsi <= 35 ? '#10b981' : '#f59e0b'
-        }}>
+        <div className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider">RSI (14)</div>
+        <div className={`text-xs sm:text-sm font-mono font-black mt-0.5 ${snapshot.rsi >= 65 ? 'text-rose-400' : snapshot.rsi <= 35 ? 'text-emerald-400' : 'text-amber-400'}`}>
           {snapshot.rsi.toFixed(1)}
         </div>
       </div>
 
       <div>
-        <div style={{ fontSize: '0.68rem', color: '#64748b', fontWeight: 700 }}>ATR (14)</div>
-        <div style={{ fontSize: '0.85rem', fontWeight: 700, color: '#f8fafc' }}>
+        <div className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider">ATR (14)</div>
+        <div className="text-xs sm:text-sm font-mono font-bold text-slate-200 mt-0.5">
           ${snapshot.atr.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 4 })}
         </div>
       </div>
 
       <div>
-        <div style={{ fontSize: '0.68rem', color: '#64748b', fontWeight: 700 }}>VOL RATIO</div>
-        <div style={{ fontSize: '0.85rem', fontWeight: 700, color: snapshot.volumeRatio >= 1.2 ? '#10b981' : '#94a3b8' }}>
+        <div className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider">VOL RATIO</div>
+        <div className={`text-xs sm:text-sm font-mono font-black mt-0.5 ${snapshot.volumeRatio >= 1.2 ? 'text-emerald-400' : 'text-slate-400'}`}>
           {snapshot.volumeRatio.toFixed(2)}x
         </div>
       </div>
@@ -615,94 +472,59 @@ interface SetupCardProps {
 
 const SetupCard: React.FC<SetupCardProps> = ({ setup, isRecommended, onApply, t }) => {
   const isLong = setup.direction === 'Long';
-  const themeColor = isLong ? '#10b981' : '#f43f5e';
   const pred = setup.prediction;
 
+  const cardBorder = isRecommended
+    ? isLong
+      ? 'border-emerald-500/60 bg-gradient-to-b from-emerald-500/10 to-slate-950/90 shadow-xl shadow-emerald-950/40'
+      : 'border-rose-500/60 bg-gradient-to-b from-rose-500/10 to-slate-950/90 shadow-xl shadow-rose-950/40'
+    : 'border-slate-800 bg-slate-950/60';
+
   return (
-    <div style={{
-      background: isRecommended
-        ? isLong
-          ? 'linear-gradient(180deg, rgba(16, 185, 129, 0.08) 0%, rgba(15, 23, 42, 0.8) 100%)'
-          : 'linear-gradient(180deg, rgba(244, 63, 94, 0.08) 0%, rgba(15, 23, 42, 0.8) 100%)'
-        : 'rgba(15, 23, 42, 0.5)',
-      border: `1px solid ${isRecommended ? themeColor : 'rgba(255, 255, 255, 0.08)'}`,
-      borderRadius: '14px',
-      padding: '1.25rem',
-      display: 'flex',
-      flexDirection: 'column',
-      justifyContent: 'space-between',
-      position: 'relative'
-    }}>
+    <div className={`rounded-xl border p-4 sm:p-5 flex flex-col justify-between relative transition-all ${cardBorder}`}>
       {/* Recommended Ribbon */}
       {isRecommended && (
-        <div style={{
-          position: 'absolute',
-          top: '-10px',
-          right: '15px',
-          background: themeColor,
-          color: '#ffffff',
-          fontSize: '0.65rem',
-          fontWeight: 900,
-          letterSpacing: '0.05em',
-          padding: '0.15rem 0.65rem',
-          borderRadius: '9999px',
-          boxShadow: `0 0 10px ${themeColor}66`
-        }}>
+        <div className={`absolute -top-3 right-4 ${isLong ? 'bg-emerald-500 shadow-emerald-500/50' : 'bg-rose-500 shadow-rose-500/50'} text-white text-[10px] font-black tracking-widest px-3 py-0.5 rounded-full shadow-md uppercase`}>
           RECOMMENDED
         </div>
       )}
 
-      <div>
+      <div className="space-y-3.5">
         {/* Header */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.85rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <span style={{
-              background: isLong ? 'rgba(16, 185, 129, 0.2)' : 'rgba(244, 63, 94, 0.2)',
-              color: themeColor,
-              fontWeight: 900,
-              padding: '0.2rem 0.6rem',
-              borderRadius: '6px',
-              fontSize: '0.8rem'
-            }}>
+        <div className="flex justify-between items-center">
+          <div className="flex items-center gap-2">
+            <span className={`px-2.5 py-1 rounded-lg text-xs font-black tracking-wide ${isLong ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-rose-500/20 text-rose-400 border border-rose-500/30'}`}>
               {isLong ? '📈 LONG SETUP' : '📉 SHORT SETUP'}
             </span>
             {setup.isTradable ? (
-              <span style={{ fontSize: '0.7rem', fontWeight: 800, color: '#10b981', display: 'flex', alignItems: 'center', gap: '0.2rem' }}>
-                <CheckCircle2 size={12} /> TRADABLE
+              <span className="text-xs font-bold text-emerald-400 flex items-center gap-1">
+                <CheckCircle2 size={13} /> TRADABLE
               </span>
             ) : (
-              <span style={{ fontSize: '0.7rem', fontWeight: 800, color: '#f59e0b', display: 'flex', alignItems: 'center', gap: '0.2rem' }}>
-                <AlertTriangle size={12} /> HIGH RISK
+              <span className="text-xs font-bold text-amber-400 flex items-center gap-1">
+                <AlertTriangle size={13} /> HIGH RISK
               </span>
             )}
           </div>
         </div>
 
         {/* Parameters Grid */}
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: '1fr 1fr 1fr',
-          gap: '0.5rem',
-          background: 'rgba(0, 0, 0, 0.2)',
-          padding: '0.75rem',
-          borderRadius: '8px',
-          marginBottom: '0.85rem'
-        }}>
+        <div className="grid grid-cols-3 gap-2 bg-slate-950/90 border border-slate-800 p-3 rounded-xl">
           <div>
-            <div style={{ fontSize: '0.68rem', color: '#64748b', fontWeight: 700 }}>{t.marketAnalyzer.proposedEntry}</div>
-            <div style={{ fontSize: '0.85rem', fontWeight: 800, color: '#f8fafc' }}>
+            <div className="text-[10px] font-extrabold text-slate-500 uppercase">{t.marketAnalyzer.proposedEntry}</div>
+            <div className="text-xs sm:text-sm font-mono font-black text-slate-100 mt-0.5">
               ${setup.entryPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 4 })}
             </div>
           </div>
           <div>
-            <div style={{ fontSize: '0.68rem', color: '#64748b', fontWeight: 700 }}>{t.marketAnalyzer.proposedSL}</div>
-            <div style={{ fontSize: '0.85rem', fontWeight: 800, color: '#f43f5e' }}>
+            <div className="text-[10px] font-extrabold text-slate-500 uppercase">{t.marketAnalyzer.proposedSL}</div>
+            <div className="text-xs sm:text-sm font-mono font-black text-rose-400 mt-0.5">
               ${setup.stopLoss.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 4 })}
             </div>
           </div>
           <div>
-            <div style={{ fontSize: '0.68rem', color: '#64748b', fontWeight: 700 }}>{t.marketAnalyzer.proposedTP}</div>
-            <div style={{ fontSize: '0.85rem', fontWeight: 800, color: '#10b981' }}>
+            <div className="text-[10px] font-extrabold text-slate-500 uppercase">{t.marketAnalyzer.proposedTP}</div>
+            <div className="text-xs sm:text-sm font-mono font-black text-emerald-400 mt-0.5">
               ${setup.takeProfit.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 4 })}
             </div>
           </div>
@@ -710,32 +532,22 @@ const SetupCard: React.FC<SetupCardProps> = ({ setup, isRecommended, onApply, t 
 
         {/* Prediction Metrics Overview */}
         {pred && (
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            background: 'rgba(6, 182, 212, 0.08)',
-            border: '1px solid rgba(6, 182, 212, 0.2)',
-            padding: '0.6rem 0.75rem',
-            borderRadius: '8px',
-            marginBottom: '0.85rem',
-            fontSize: '0.75rem'
-          }}>
+          <div className="flex items-center justify-between bg-cyan-500/10 border border-cyan-500/30 p-2.5 rounded-xl text-xs font-semibold">
             <div>
-              <span style={{ color: '#94a3b8' }}>{t.monteCarlo.winRate}: </span>
-              <strong style={{ color: pred.winProbability >= 50 ? '#10b981' : '#f59e0b', fontSize: '0.85rem' }}>
+              <span className="text-slate-400">{t.monteCarlo.winRate}: </span>
+              <strong className={`font-mono font-black ${pred.winProbability >= 50 ? 'text-emerald-400' : 'text-amber-400'}`}>
                 {pred.winProbability.toFixed(1)}%
               </strong>
             </div>
             <div>
-              <span style={{ color: '#94a3b8' }}>R:R: </span>
-              <strong style={{ color: '#06b6d4', fontSize: '0.85rem' }}>
+              <span className="text-slate-400">R:R: </span>
+              <strong className="font-mono font-black text-cyan-400">
                 1:{setup.riskRewardRatio.toFixed(2)}
               </strong>
             </div>
             <div>
-              <span style={{ color: '#94a3b8' }}>E[R]: </span>
-              <strong style={{ color: pred.expectedRMultiple > 0 ? '#10b981' : '#f43f5e', fontSize: '0.85rem' }}>
+              <span className="text-slate-400">E[R]: </span>
+              <strong className={`font-mono font-black ${pred.expectedRMultiple > 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
                 {pred.expectedRMultiple.toFixed(2)}R
               </strong>
             </div>
@@ -743,37 +555,29 @@ const SetupCard: React.FC<SetupCardProps> = ({ setup, isRecommended, onApply, t 
         )}
 
         {/* Setup Score & Tradable Tag */}
-        <div style={{ fontSize: '0.78rem', color: '#cbd5e1', lineHeight: 1.4, marginBottom: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span>Score: <strong style={{ color: '#06b6d4' }}>{setup.setupScore.toFixed(0)}/100</strong></span>
-          <span style={{ fontSize: '0.72rem', color: '#94a3b8' }}>Levels: {setup.stopLossSource}</span>
+        <div className="text-xs text-slate-300 flex justify-between items-center pt-1 font-semibold">
+          <span>Score: <strong className="text-cyan-400 font-mono font-black">{setup.setupScore.toFixed(0)}/100</strong></span>
+          <span className="text-[11px] text-slate-400 font-mono">SL Method: {setup.stopLossSource}</span>
         </div>
       </div>
 
       {/* Action Button: Apply Setup */}
-      <button
+      <motion.button
+        whileHover={{ scale: 1.01 }}
+        whileTap={{ scale: 0.98 }}
         type="button"
         onClick={onApply}
-        className="btn"
-        style={{
-          width: '100%',
-          padding: '0.6rem',
-          fontSize: '0.82rem',
-          fontWeight: 800,
-          background: isRecommended ? themeColor : 'rgba(255, 255, 255, 0.08)',
-          color: isRecommended ? '#ffffff' : '#e2e8f0',
-          border: 'none',
-          borderRadius: '8px',
-          cursor: 'pointer',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          gap: '0.4rem',
-          transition: 'all 0.15s ease'
-        }}
+        className={`w-full mt-4 py-2.5 px-4 rounded-xl text-xs sm:text-sm font-black flex items-center justify-center gap-2 cursor-pointer transition-all shadow-md ${
+          isRecommended
+            ? isLong
+              ? 'bg-emerald-500 hover:bg-emerald-400 text-white shadow-emerald-500/30'
+              : 'bg-rose-500 hover:bg-rose-400 text-white shadow-rose-500/30'
+            : 'bg-slate-800 hover:bg-slate-700 text-slate-200'
+        }`}
       >
         <span>{t.marketAnalyzer.applySetupBtn}</span>
-        <ArrowRight size={14} />
-      </button>
+        <ArrowRight size={15} />
+      </motion.button>
     </div>
   );
 };

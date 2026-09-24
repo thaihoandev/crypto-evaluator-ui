@@ -335,37 +335,49 @@ export const CandlestickChart: React.FC<CandlestickChartProps> = ({
   };
 
   return (
-    <div className="card" style={{ width: '100%' }}>
+    <div className="glass-panel p-5 rounded-2xl shadow-2xl border border-slate-800/80 w-full space-y-3">
       {/* ── Header Controls Bar ── */}
-      <div className="card-title" style={{ justifyContent: 'space-between', marginBottom: '0.75rem', flexWrap: 'wrap', gap: '0.5rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <ChartIcon size={20} color="#06b6d4" />
-          {t.candlestickChart.chartTitle} ({symbol} • {timeframe})
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800/80 pb-3">
+        <div className="flex items-center gap-2">
+          <div className="p-2 rounded-lg bg-cyan-500/10 border border-cyan-500/30 text-cyan-400">
+            <ChartIcon size={18} />
+          </div>
+          <h3 className="font-heading font-black text-sm text-slate-100 uppercase tracking-wider flex items-center gap-2">
+            {t.candlestickChart.chartTitle}
+            <span className="bg-cyan-500/15 text-cyan-300 border border-cyan-500/30 text-[11px] font-mono px-2 py-0.5 rounded-md">
+              {symbol} • {timeframe}
+            </span>
+          </h3>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', fontSize: '0.75rem', fontWeight: 600, flexWrap: 'wrap' }}>
-          <span style={{ color: '#06b6d4' }}>● EMA 20 (${snapshot ? formatPrice(snapshot.ema20) : '---'})</span>
-          <span style={{ color: '#3b82f6' }}>● EMA 50 (${snapshot ? formatPrice(snapshot.ema50) : '---'})</span>
-          <span style={{ color: '#8b5cf6' }}>● EMA 200 (${snapshot ? formatPrice(snapshot.ema200) : '---'})</span>
+
+        <div className="flex items-center gap-2 text-xs font-mono font-bold flex-wrap">
+          <span className="text-cyan-400 bg-slate-950/80 px-2 py-1 rounded border border-slate-800">
+            EMA 20: ${snapshot ? formatPrice(snapshot.ema20) : '---'}
+          </span>
+          <span className="text-blue-400 bg-slate-950/80 px-2 py-1 rounded border border-slate-800">
+            EMA 50: ${snapshot ? formatPrice(snapshot.ema50) : '---'}
+          </span>
+          <span className="text-purple-400 bg-slate-950/80 px-2 py-1 rounded border border-slate-800">
+            EMA 200: ${snapshot ? formatPrice(snapshot.ema200) : '---'}
+          </span>
 
           {/* Scenario Toggle Buttons */}
           {prediction?.scenarioPaths && prediction.scenarioPaths.length > 0 && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+            <div className="flex items-center gap-1">
               {Object.entries(SCENARIO_STYLES).map(([name, s]) => (
                 <button
                   key={name}
                   type="button"
                   onClick={() => toggleScenario(name)}
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: '0.3rem',
-                    background: visibleScenarios[name] ? `${s.stroke}22` : 'rgba(100,116,139,0.08)',
-                    border: `1px solid ${visibleScenarios[name] ? s.stroke + '99' : 'rgba(100,116,139,0.25)'}`,
-                    borderRadius: '6px', padding: '0.2rem 0.55rem',
-                    color: visibleScenarios[name] ? s.stroke : '#64748b',
-                    cursor: 'pointer', fontWeight: 800, fontSize: '0.72rem'
-                  }}
+                  className={`px-2 py-1 rounded-md text-[11px] font-mono font-black border transition-all cursor-pointer ${
+                    visibleScenarios[name]
+                      ? 'bg-slate-900 border-slate-700 text-slate-100 shadow-sm'
+                      : 'bg-slate-950/40 border-slate-800 text-slate-500'
+                  }`}
+                  style={{ color: visibleScenarios[name] ? s.stroke : undefined }}
                   title={s.desc}
                 >
-                  <span>{s.label}</span>
+                  {s.label}
                 </button>
               ))}
             </div>
@@ -375,22 +387,14 @@ export const CandlestickChart: React.FC<CandlestickChartProps> = ({
           <button
             type="button"
             onClick={() => setShowProjection((p) => !p)}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.35rem',
-              background: showProjection ? 'rgba(6, 182, 212, 0.15)' : 'rgba(100, 116, 139, 0.1)',
-              border: `1px solid ${showProjection ? 'rgba(6, 182, 212, 0.4)' : 'rgba(100, 116, 139, 0.25)'}`,
-              borderRadius: '6px',
-              padding: '0.2rem 0.6rem',
-              color: showProjection ? '#06b6d4' : '#64748b',
-              cursor: 'pointer',
-              fontWeight: 700,
-              fontSize: '0.72rem'
-            }}
+            className={`px-2.5 py-1 rounded-md text-[11px] font-mono font-bold border transition-all cursor-pointer flex items-center gap-1 ${
+              showProjection
+                ? 'bg-cyan-500/15 border-cyan-500/40 text-cyan-300'
+                : 'bg-slate-950/40 border-slate-800 text-slate-500'
+            }`}
           >
-            {showProjection ? <Eye size={12} /> : <EyeOff size={12} />}
-            {t.candlestickChart.toggleProjection}: {showProjection ? 'ON' : 'OFF'}
+            {showProjection ? <Eye size={13} /> : <EyeOff size={13} />}
+            <span>{t.candlestickChart.toggleProjection}: {showProjection ? 'ON' : 'OFF'}</span>
           </button>
         </div>
       </div>
@@ -398,14 +402,7 @@ export const CandlestickChart: React.FC<CandlestickChartProps> = ({
       {/* ── SVG Canvas Container ── */}
       <div
         ref={containerRef}
-        style={{
-          position: 'relative',
-          width: '100%',
-          background: '#070a12',
-          border: '1px solid rgba(255,255,255,0.08)',
-          borderRadius: '12px',
-          overflow: 'hidden'
-        }}
+        className="relative w-full bg-[#05070d] border border-slate-800/80 rounded-xl overflow-hidden shadow-inner"
       >
         <svg
           viewBox={`0 0 ${SVG_WIDTH} ${SVG_HEIGHT}`}

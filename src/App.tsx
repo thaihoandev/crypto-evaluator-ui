@@ -192,7 +192,7 @@ export function App() {
 
   return (
 
-    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+    <div className="min-h-screen flex flex-col bg-[#07090e] text-slate-100 font-sans">
       {/* Top Navbar with Workspace Tabs */}
       <Navbar
         apiStatus={apiStatus}
@@ -202,8 +202,8 @@ export function App() {
       />
 
       {/* Top Ticker Marquee */}
-      <div className="ticker-bar">
-        <span style={{ color: '#64748b', fontWeight: 700, fontSize: '0.72rem', textTransform: 'uppercase' }}>
+      <div className="flex items-center gap-3 bg-slate-950/90 border-b border-slate-800/80 px-4 py-2 text-xs overflow-x-auto shrink-0 shadow-inner">
+        <span className="font-extrabold text-slate-400 uppercase tracking-wider text-[11px] shrink-0">
           LIVE FUTURES TICKERS:
         </span>
         {TOP_TICKERS.map((t) => {
@@ -211,51 +211,39 @@ export function App() {
           return (
             <motion.div
               key={t.symbol}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className="ticker-item"
+              whileHover={{ scale: 1.04 }}
+              whileTap={{ scale: 0.96 }}
+              className="flex items-center gap-2 bg-slate-900/80 hover:bg-slate-800/90 border border-slate-800 hover:border-cyan-500/50 px-2.5 py-1 rounded-full whitespace-nowrap cursor-pointer transition-all shrink-0"
               onClick={() => {
                 setActiveSymbol(t.symbol);
                 if (livePrice && livePrice > 0) {
                   setActiveEntryPrice(livePrice);
                 }
               }}
-              style={{ cursor: 'pointer' }}
             >
-              <span style={{ fontWeight: 800, color: '#f8fafc' }}>{t.name}</span>
+              <span className="font-extrabold text-slate-200 text-xs">{t.name}</span>
               {livePrice ? (
-                <span style={{ fontSize: '0.78rem', fontWeight: 800, color: '#06b6d4', fontFamily: 'JetBrains Mono, monospace' }}>
+                <span className="text-xs font-bold text-cyan-400 font-mono">
                   ${livePrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 4 })}
                 </span>
               ) : (
-                <span style={{ fontSize: '0.7rem', color: '#06b6d4' }}>● Live</span>
+                <span className="text-[11px] font-semibold text-cyan-400 animate-pulse">● Live</span>
               )}
             </motion.div>
           );
         })}
       </div>
 
-      <main className="container" style={{ flex: 1, paddingTop: '1.25rem' }}>
+      <main className="max-w-[1600px] w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-1 space-y-6">
         {errorMessage && (
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
-            style={{
-              background: 'rgba(244, 63, 94, 0.12)',
-              border: '1px solid rgba(244, 63, 94, 0.3)',
-              color: '#fca5a5',
-              padding: '1rem',
-              borderRadius: '10px',
-              marginBottom: '1.25rem',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.75rem',
-              fontSize: '0.875rem'
-            }}
+            className="bg-rose-500/10 border border-rose-500/30 text-rose-300 p-4 rounded-xl mb-5 flex items-center gap-3 text-xs sm:text-sm font-semibold"
           >
-            <AlertCircle size={20} color="#f43f5e" />
+            <AlertCircle size={20} className="text-rose-400 shrink-0" />
             <div>
-              <strong>Evaluation Error:</strong> {errorMessage}
+              <strong className="text-rose-200 font-bold">Evaluation Error:</strong> {errorMessage}
             </div>
           </motion.div>
         )}
@@ -270,7 +258,7 @@ export function App() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -12 }}
               transition={{ duration: 0.25 }}
-              style={{ display: 'grid', gridTemplateColumns: '400px 1fr', gap: '1.25rem' }}
+              className="grid grid-cols-1 lg:grid-cols-[380px_1fr] xl:grid-cols-[400px_1fr] gap-5"
             >
               {/* Left Column: Trade Setup Form */}
               <div>
@@ -287,7 +275,7 @@ export function App() {
               </div>
 
               {/* Right Column: Chart & Score Overview */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+              <div className="flex flex-col gap-5 min-w-0">
                 {/* Candlestick Chart with Future Trajectory Corridor */}
                 <CandlestickChart
                   symbol={activeSymbol}
@@ -303,7 +291,7 @@ export function App() {
 
                 {/* Evaluation Quick Summary Row (if evaluated) */}
                 {evaluation ? (
-                  <div style={{ display: 'grid', gridTemplateColumns: '320px 1fr', gap: '1.25rem' }}>
+                  <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-5">
                     <TradeScoreCard score={evaluation.score} explanation={evaluation.explanation} />
                     <MonteCarloWidget prediction={evaluation.prediction} />
                   </div>
@@ -311,17 +299,16 @@ export function App() {
                   <motion.div
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
-                    className="card"
-                    style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '220px', textAlign: 'center' }}
+                    className="bg-slate-900/80 backdrop-blur-xl border border-slate-800 shadow-2xl rounded-2xl p-8 sm:p-12 flex flex-col items-center justify-center min-h-[220px] text-center space-y-3"
                   >
-                    <div style={{ background: 'rgba(6, 182, 212, 0.1)', padding: '1rem', borderRadius: '50%', marginBottom: '0.85rem' }}>
-                      <Zap size={32} color="#06b6d4" />
+                    <div className="bg-cyan-500/10 p-4 rounded-full border border-cyan-500/30">
+                      <Zap size={32} className="text-cyan-400" />
                     </div>
-                    <h3 style={{ fontFamily: 'Outfit, sans-serif', fontSize: '1.25rem', fontWeight: 800, marginBottom: '0.35rem' }}>
+                    <h3 className="font-extrabold text-lg sm:text-xl text-slate-100">
                       Ready to Evaluate Trade Setup
                     </h3>
-                    <p style={{ color: '#94a3b8', maxWidth: '440px', fontSize: '0.85rem', lineHeight: 1.5 }}>
-                      Select a Crypto pair using the Search Dropdown on the left or fetch live market price. Click <strong>EVALUATE TRADE SETUP</strong> to trigger quantitative score engine and draw future trajectory corridors.
+                    <p className="text-slate-400 max-w-md text-xs sm:text-sm leading-relaxed">
+                      Select a Crypto pair using the Search Dropdown on the left or fetch live market price. Click <strong className="text-slate-200">EVALUATE TRADE SETUP</strong> to trigger quantitative score engine and draw future trajectory corridors.
                     </p>
                   </motion.div>
                 )}
@@ -348,7 +335,6 @@ export function App() {
 
           {/* ── TAB 2: SCORE & RULE INSPECTOR ── */}
           {activeTab === 'inspector' && (
-
             <motion.div
               key="inspector-tab"
               initial={{ opacity: 0, y: 12 }}
@@ -357,9 +343,9 @@ export function App() {
               transition={{ duration: 0.25 }}
             >
               {evaluation ? (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                <div className="flex flex-col gap-5">
                   {/* Top Summary Cards */}
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem' }}>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                     <MarketSnapshotCard snapshot={evaluation.snapshot} symbol={activeSymbol} />
                     <RiskWarningsPanel warnings={evaluation.warnings} />
                   </div>
@@ -371,12 +357,12 @@ export function App() {
                   <ScoreBreakdown components={evaluation.components} />
                 </div>
               ) : (
-                <div className="card" style={{ textAlign: 'center', padding: '4rem 2rem' }}>
-                  <BarChart2 size={40} color="#06b6d4" style={{ marginBottom: '1rem' }} />
-                  <h3 style={{ fontFamily: 'Outfit, sans-serif', fontSize: '1.3rem', fontWeight: 800, marginBottom: '0.5rem' }}>
+                <div className="bg-slate-900/80 backdrop-blur-xl border border-slate-800 rounded-2xl p-12 text-center flex flex-col items-center justify-center space-y-3">
+                  <BarChart2 size={40} className="text-cyan-400 mb-2" />
+                  <h3 className="font-extrabold text-lg sm:text-xl text-slate-100">
                     No Evaluation Selected
                   </h3>
-                  <p style={{ color: '#94a3b8', fontSize: '0.875rem' }}>
+                  <p className="text-slate-400 text-xs sm:text-sm max-w-md leading-relaxed">
                     Evaluate a trade setup on the Trading Desk tab first to inspect rule rationales and score breakdown.
                   </p>
                 </div>
@@ -416,7 +402,7 @@ export function App() {
         </AnimatePresence>
       </main>
 
-      <footer style={{ borderTop: '1px solid rgba(255, 255, 255, 0.08)', padding: '1.25rem', textAlign: 'center', fontSize: '0.78rem', color: '#64748b', marginTop: '2rem' }}>
+      <footer className="border-t border-slate-800/80 py-5 text-center text-xs text-slate-500 mt-8">
         Crypto Trade Evaluator &copy; 2026. ASP.NET Core Clean Architecture & Vite React Trading Terminal.
       </footer>
     </div>
@@ -424,3 +410,4 @@ export function App() {
 }
 
 export default App;
+

@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import type { ScoreComponent } from '../types/trade';
 import {
-  ChevronDown, ChevronUp, CheckCircle2, AlertTriangle,
-  ShieldCheck, Zap, ArrowRight
+  ChevronDown, ChevronUp, ShieldCheck
 } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface ScoreRuleInspectorProps {
   components: ScoreComponent[];
@@ -13,36 +13,40 @@ interface ScoreRuleInspectorProps {
 interface BadgeStyle {
   label: string;
   color: string;
-  bgColor: string;
-  borderColor: string;
+  bgClass: string;
+  borderClass: string;
+  textClass: string;
 }
 
 function getBadgeStyle(score: number): BadgeStyle {
   if (score >= 75) return {
     label: 'Confirm & Proceed',
     color: '#10b981',
-    bgColor: 'rgba(16,185,129,0.08)',
-    borderColor: 'rgba(16,185,129,0.25)'
+    bgClass: 'bg-emerald-500/10',
+    borderClass: 'border-emerald-500/30',
+    textClass: 'text-emerald-400'
   };
   if (score >= 50) return {
     label: 'Monitor Closely',
     color: '#f59e0b',
-    bgColor: 'rgba(245,158,11,0.08)',
-    borderColor: 'rgba(245,158,11,0.25)'
+    bgClass: 'bg-amber-500/10',
+    borderClass: 'border-amber-500/30',
+    textClass: 'text-amber-400'
   };
   return {
     label: 'Action Required',
     color: '#f43f5e',
-    bgColor: 'rgba(244,63,94,0.08)',
-    borderColor: 'rgba(244,63,94,0.25)'
+    bgClass: 'bg-rose-500/10',
+    borderClass: 'border-rose-500/30',
+    textClass: 'text-rose-400'
   };
 }
 
-function getScoreColor(score: number): string {
-  if (score >= 80) return '#10b981';
-  if (score >= 60) return '#06b6d4';
-  if (score >= 40) return '#f59e0b';
-  return '#f43f5e';
+function getScoreColorClass(score: number): string {
+  if (score >= 80) return 'text-emerald-400';
+  if (score >= 60) return 'text-cyan-400';
+  if (score >= 40) return 'text-amber-400';
+  return 'text-rose-400';
 }
 
 function formatCategoryTitle(cat: string): string {
@@ -68,129 +72,93 @@ export const ScoreRuleInspector: React.FC<ScoreRuleInspectorProps> = ({
   );
 
   return (
-    <div className="card">
-      <div className="card-title" style={{ justifyContent: 'space-between' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <ShieldCheck size={20} color="#06b6d4" />
-          Evaluation Criteria & Rule Rationale Inspector
+    <div className="glass-panel p-5 rounded-2xl shadow-2xl border border-slate-800/80 space-y-4">
+      <div className="flex items-center justify-between pb-3 border-b border-slate-800/80">
+        <div className="flex items-center gap-2">
+          <div className="p-2 rounded-lg bg-cyan-500/10 border border-cyan-500/30 text-cyan-400">
+            <ShieldCheck size={18} />
+          </div>
+          <h3 className="font-heading font-black text-sm text-slate-100 uppercase tracking-wider">
+            Rule Rationale Inspector
+          </h3>
         </div>
-        <span style={{
-          fontSize: '0.8rem', color: '#10b981', fontWeight: 800,
-          background: 'rgba(16,185,129,0.12)', padding: '0.25rem 0.75rem',
-          borderRadius: '9999px', border: '1px solid rgba(16,185,129,0.3)',
-          fontFamily: 'JetBrains Mono, monospace'
-        }}>
-          Score: {totalScore.toFixed(1)} / 100
+        <span className="text-xs font-mono font-black text-emerald-400 bg-emerald-500/15 border border-emerald-500/30 px-3 py-1 rounded-full">
+          Total Score: {totalScore.toFixed(1)} / 100
         </span>
       </div>
 
-      <p style={{ fontSize: '0.825rem', color: '#94a3b8', marginBottom: '1.15rem' }}>
-        Click any scoring rule below to inspect the weight contribution, rationale, and <strong style={{ color: '#06b6d4' }}>suggested next action</strong>:
+      <p className="text-xs text-slate-400">
+        Click any quantitative rule below to inspect category weight contributions, empirical rationales, and <strong className="text-cyan-400">suggested actions</strong>:
       </p>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
+      <div className="space-y-2.5">
         {components.map((c) => {
-          const isExpanded  = expandedCat === c.category;
-          const scoreColor  = getScoreColor(c.score);
-          const badge       = getBadgeStyle(c.score);
+          const isExpanded = expandedCat === c.category;
+          const scoreClass = getScoreColorClass(c.score);
+          const badge = getBadgeStyle(c.score);
           const weightedPts = (c.score * c.weight).toFixed(2);
-          const weightPct   = Math.round(c.weight * 100);
+          const weightPct = Math.round(c.weight * 100);
 
           return (
             <div
               key={c.category}
-              style={{
-                background: isExpanded ? '#0a0e16' : 'rgba(255,255,255,0.02)',
-                border: `1px solid ${isExpanded ? 'rgba(6, 182, 212, 0.3)' : 'rgba(255, 255, 255, 0.06)'}`,
-                borderRadius: '10px',
-                overflow: 'hidden',
-                transition: 'all 0.15s ease'
-              }}
+              className="bg-slate-950/80 border border-slate-800/80 rounded-xl overflow-hidden transition-all"
             >
-              {/* Accordion Header */}
               <button
                 type="button"
+                className="w-full p-3.5 flex items-center justify-between text-left cursor-pointer hover:bg-slate-900/60 transition-colors"
                 onClick={() => setExpandedCat(isExpanded ? null : c.category)}
-                style={{
-                  width: '100%', display: 'flex', justifyContent: 'space-between',
-                  alignItems: 'center', padding: '0.85rem 1rem',
-                  background: 'transparent', border: 'none',
-                  color: '#f8fafc', cursor: 'pointer', textAlign: 'left'
-                }}
               >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-                  {c.score >= 60
-                    ? <CheckCircle2 size={16} color={scoreColor} />
-                    : <AlertTriangle size={16} color={scoreColor} />
-                  }
-                  <span style={{ fontWeight: 700, fontSize: '0.9rem' }}>
+                <div className="flex items-center gap-3">
+                  <span className="font-bold text-xs sm:text-sm text-slate-100">
                     {formatCategoryTitle(c.category)}
+                  </span>
+                  <span className={`text-xs font-mono font-black ${scoreClass}`}>
+                    {c.score} pts
                   </span>
                 </div>
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                  <div style={{ width: '80px', height: '6px', background: '#1e293b', borderRadius: '3px', overflow: 'hidden' }}>
-                    <div style={{ width: `${c.score}%`, height: '100%', background: scoreColor }} />
-                  </div>
-                  <span style={{
-                    color: scoreColor, fontWeight: 800, fontSize: '0.9rem',
-                    fontFamily: 'JetBrains Mono, monospace',
-                    background: `${scoreColor}15`, padding: '0.15rem 0.5rem',
-                    borderRadius: '6px', border: `1px solid ${scoreColor}33`
-                  }}>
-                    {c.score}/100
+                <div className="flex items-center gap-3">
+                  <span className={`hidden sm:inline-block px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase border ${badge.bgClass} ${badge.borderClass} ${badge.textClass}`}>
+                    {badge.label}
                   </span>
-                  {isExpanded
-                    ? <ChevronUp size={16} color="#94a3b8" />
-                    : <ChevronDown size={16} color="#94a3b8" />
-                  }
+                  <span className="text-slate-400">
+                    {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                  </span>
                 </div>
               </button>
 
-              {/* Accordion Body */}
-              {isExpanded && (
-                <div style={{
-                  padding: '0.9rem 1rem 1.1rem 1rem',
-                  borderTop: '1px solid rgba(255,255,255,0.06)',
-                  background: '#070a12', fontSize: '0.85rem'
-                }}>
-                  <div style={{
-                    display: 'grid', gridTemplateColumns: '1fr 1fr',
-                    gap: '0.75rem', marginBottom: '0.85rem'
-                  }}>
-                    <div style={{ background: '#0e131f', padding: '0.65rem', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.06)' }}>
-                      <div style={{ fontSize: '0.68rem', color: '#64748b', fontWeight: 700, textTransform: 'uppercase' }}>CATEGORY WEIGHT</div>
-                      <div style={{ fontSize: '0.95rem', fontWeight: 800, color: '#06b6d4', marginTop: '0.1rem' }}>{weightPct}% Weight</div>
-                    </div>
-                    <div style={{ background: '#0e131f', padding: '0.65rem', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.06)' }}>
-                      <div style={{ fontSize: '0.68rem', color: '#64748b', fontWeight: 700, textTransform: 'uppercase' }}>WEIGHTED POINTS</div>
-                      <div style={{ fontSize: '0.95rem', fontWeight: 800, color: '#10b981', marginTop: '0.1rem' }}>+{weightedPts} Points</div>
-                    </div>
-                  </div>
-
-                  <div style={{ color: '#cbd5e1', lineHeight: 1.55, marginBottom: '0.85rem' }}>
-                    <strong>Evaluation Reason: </strong>{c.explanation}
-                  </div>
-
-                  <div style={{
-                    background: badge.bgColor,
-                    border: `1px solid ${badge.borderColor}`,
-                    borderRadius: '8px', padding: '0.75rem 0.9rem'
-                  }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.4rem' }}>
-                      <Zap size={14} color={badge.color} />
-                      <span style={{ fontSize: '0.72rem', fontWeight: 800, textTransform: 'uppercase', color: badge.color }}>
-                        Suggested Action
-                      </span>
+              <AnimatePresence>
+                {isExpanded && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="p-4 border-t border-slate-800/60 bg-slate-900/40 space-y-3 text-xs"
+                  >
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 bg-slate-950/80 p-2.5 rounded-xl border border-slate-800 text-center font-mono">
+                      <div>
+                        <span className="text-[10px] text-slate-500 font-bold uppercase block">Weight</span>
+                        <span className="font-black text-slate-200">{weightPct}%</span>
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-slate-500 font-bold uppercase block">Category Score</span>
+                        <span className={`font-black ${scoreClass}`}>{c.score} / 100</span>
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-slate-500 font-bold uppercase block">Weighted Pts</span>
+                        <span className="font-black text-cyan-400">+{weightedPts} pts</span>
+                      </div>
                     </div>
 
-                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.5rem', color: '#f8fafc', fontSize: '0.825rem', lineHeight: 1.5 }}>
-                      <ArrowRight size={14} color={badge.color} style={{ marginTop: '0.15rem', flexShrink: 0 }} />
-                      <span>{c.suggestedAction}</span>
+                    <div className="text-slate-300 leading-relaxed font-medium">
+                      <strong className="text-white font-bold block mb-1">Rationale:</strong>
+                      {c.explanation}
                     </div>
-                  </div>
-                </div>
-              )}
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           );
         })}

@@ -1,7 +1,9 @@
-import React, { useState, useMemo, useRef } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import type { TradeDirection, Timeframe, MarketSnapshotDto, CandleDto, TradePredictionDto, TrajectoryPointDto, ScenarioPathDto } from '../types/trade';
-import { CandlestickChart as ChartIcon, Clock, Eye, EyeOff } from 'lucide-react';
+import { CandlestickChart as ChartIcon, Clock, Eye, EyeOff, Activity } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
+import { useKlineStream, timeframeToKlineInterval } from '../hooks/useBinanceWebSocket';
+import { formatDynamicPrice } from '../utils/formatters';
 
 interface CandlestickChartProps {
   symbol: string;
@@ -52,14 +54,116 @@ export const CandlestickChart: React.FC<CandlestickChartProps> = ({
 
   const isLong = direction === 'Long';
 
+  // ─── Realtime Binance Kline Stream Hook ──────────────────────────
+  const klineInterval = timeframeToKlineInterval(timeframe);
+  const { latestKline, status: wsStatus } = useKlineStream({
+    symbol,
+    interval: klineInterval,
+    enabled: true
+  });
+
+  const [liveCandles, setLiveCandles] = useState<CandleDto[]>(candles);
+
+  // Sync when initial/analyzed candles prop changes or fetch from Binance REST if empty
+  useEffect(() => {
+    if (candles && candles.length > 0) {
+      setLiveCandles(candles);
+      return;
+    }
+
+    let isCancelled = false;
+    const fetchInitialCandles = async () => {
+      try {
+        const binanceSymbol = symbol.toUpperCase().trim();
+        const url = `https://fapi.binance.com/fapi/v1/klines?symbol=${binanceSymbol}&interval=${klineInterval}&limit=60`;
+        const res = await fetch(url);
+        if (!res.ok) return;
+        const data = (await res.json()) as (string | number)[][];
+        if (isCancelled || !Array.isArray(data)) return;
+
+        const mapped: CandleDto[] = data.map((elem) => ({
+          openTime: new Date(elem[0] as number).toISOString(),
+          open: parseFloat(elem[1] as string),
+          high: parseFloat(elem[2] as string),
+          low: parseFloat(elem[3] as string),
+          close: parseFloat(elem[4] as string),
+          volume: parseFloat(elem[5] as string),
+        }));
+
+        if (mapped.length > 0) {
+          setLiveCandles(mapped);
+        }
+      } catch {
+        // Fallback fetch silent
+      }
+    };
+
+    fetchInitialCandles();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [candles, symbol, timeframe, klineInterval]);
+
+  // Merge Binance WebSocket realtime tick updates into liveCandles
+  useEffect(() => {
+    if (!latestKline || !latestKline.symbol) return;
+    if (latestKline.symbol.toUpperCase() !== symbol.toUpperCase()) return;
+
+    setLiveCandles((prev) => {
+      if (!prev || prev.length === 0) {
+        return [
+          {
+            openTime: new Date(latestKline.openTime).toISOString(),
+            open: latestKline.open,
+            high: latestKline.high,
+            low: latestKline.low,
+            close: latestKline.close,
+            volume: latestKline.volume,
+          }
+        ];
+      }
+
+      const updated = [...prev];
+      const lastIndex = updated.length - 1;
+      const lastCandle = updated[lastIndex];
+
+      const lastCandleTime = new Date(lastCandle.openTime).getTime();
+      const isSameCandle =
+        Math.abs(lastCandleTime - latestKline.openTime) < 60_000 ||
+        new Date(lastCandle.openTime).toISOString() === new Date(latestKline.openTime).toISOString();
+
+      if (isSameCandle) {
+        updated[lastIndex] = {
+          ...lastCandle,
+          close: latestKline.close,
+          high: Math.max(lastCandle.high, latestKline.high),
+          low: Math.min(lastCandle.low, latestKline.low),
+          volume: latestKline.volume,
+        };
+      } else if (latestKline.openTime > lastCandleTime) {
+        updated.push({
+          openTime: new Date(latestKline.openTime).toISOString(),
+          open: latestKline.open,
+          high: latestKline.high,
+          low: latestKline.low,
+          close: latestKline.close,
+          volume: latestKline.volume,
+        });
+      }
+
+      return updated;
+    });
+  }, [latestKline, symbol]);
+
   // ─── Price Bounds ───────────────────────────────────────────────
   const { maxPrice, priceRange } = useMemo(() => {
     const allPrices: number[] = [entryPrice, stopLoss, takeProfit];
     if (snapshot) {
       allPrices.push(snapshot.currentPrice, snapshot.ema20, snapshot.ema50, snapshot.ema200);
     }
-    if (candles && candles.length > 0) {
-      candles.forEach((c) => { allPrices.push(c.high, c.low); });
+    if (liveCandles && liveCandles.length > 0) {
+      liveCandles.forEach((c) => { allPrices.push(c.high, c.low); });
     }
     if (prediction?.trajectoryPoints) {
       prediction.trajectoryPoints.forEach((tp) => {
@@ -75,7 +179,7 @@ export const CandlestickChart: React.FC<CandlestickChartProps> = ({
       maxPrice: maxP + padding,
       priceRange: (maxP + padding) - Math.max(0, minP - padding) || 1
     };
-  }, [entryPrice, stopLoss, takeProfit, snapshot, candles, prediction]);
+  }, [entryPrice, stopLoss, takeProfit, snapshot, liveCandles, prediction]);
 
   // ─── SVG Constants ──────────────────────────────────────────────
   const SVG_WIDTH = 1000;
@@ -104,14 +208,13 @@ export const CandlestickChart: React.FC<CandlestickChartProps> = ({
 
   // ─── Volume ─────────────────────────────────────────────────────
   const maxVolume = useMemo(() => {
-    if (!candles || candles.length === 0) return 1;
-    return Math.max(...candles.map((c) => c.volume)) || 1;
-  }, [candles]);
+    if (!liveCandles || liveCandles.length === 0) return 1;
+    return Math.max(...liveCandles.map((c) => c.volume)) || 1;
+  }, [liveCandles]);
 
-  const formatPrice = (p: number) =>
-    p.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 4 });
+  const formatPrice = (p: number) => formatDynamicPrice(p);
 
-  const hoveredCandle = hoveredIndex !== null && candles ? candles[hoveredIndex] : null;
+  const hoveredCandle = hoveredIndex !== null && liveCandles ? liveCandles[hoveredIndex] : null;
 
   // ─── Price Ticks ────────────────────────────────────────────────
   const priceTicks = useMemo(() => {
@@ -124,7 +227,7 @@ export const CandlestickChart: React.FC<CandlestickChartProps> = ({
   }, [maxPrice, priceRange]);
 
   // ─── Proportional Candle Scaling ────────────────────────────────
-  const totalCandles = candles ? candles.length : 0;
+  const totalCandles = liveCandles ? liveCandles.length : 0;
   const totalSlots   = (totalCandles > 0 ? totalCandles : 60) + PROJECTION_CANDLE_COUNT;
   const slotWidth    = CANDLE_AREA_RIGHT / totalSlots;
   const startX       = totalCandles * slotWidth;
@@ -344,8 +447,14 @@ export const CandlestickChart: React.FC<CandlestickChartProps> = ({
           </div>
           <h3 className="font-heading font-black text-sm text-slate-100 uppercase tracking-wider flex items-center gap-2">
             {t.candlestickChart.chartTitle}
-            <span className="bg-cyan-500/15 text-cyan-300 border border-cyan-500/30 text-[11px] font-mono px-2 py-0.5 rounded-md">
-              {symbol} • {timeframe}
+            <span className="bg-cyan-500/15 text-cyan-300 border border-cyan-500/30 text-[11px] font-mono px-2 py-0.5 rounded-md flex items-center gap-1.5">
+              <span>{symbol} • {timeframe}</span>
+              {wsStatus === 'connected' && (
+                <span className="flex items-center gap-1 text-[10px] text-emerald-400 font-bold bg-emerald-500/20 px-1.5 py-0.2 rounded border border-emerald-500/30">
+                  <Activity className="w-2.5 h-2.5 animate-pulse text-emerald-400" />
+                  WS LIVE
+                </span>
+              )}
             </span>
           </h3>
         </div>
@@ -695,9 +804,9 @@ export const CandlestickChart: React.FC<CandlestickChartProps> = ({
           )}
 
           {/* ── Candlesticks & Volume ── */}
-          {candles && totalCandles > 0 && (
+          {liveCandles && totalCandles > 0 && (
             <g style={{ pointerEvents: 'none' }}>
-              {candles.map((c, i) => {
+              {liveCandles.map((c, i) => {
                 const cx = (i + 0.5) * slotWidth;
                 const candleWidth = Math.max(3, slotWidth * 0.65);
 

@@ -180,7 +180,10 @@ export function useTickerStream({
       const streamNames = symbols
         .map((s) => `${s.toLowerCase()}@miniTicker`)
         .join('/');
-      const url = `${BINANCE_FUTURES_WS}/stream?streams=${streamNames}`;
+      const wsPath = BINANCE_FUTURES_WS.includes('/stream')
+        ? BINANCE_FUTURES_WS
+        : `${BINANCE_FUTURES_WS}/market/stream`;
+      const url = `${wsPath}?streams=${streamNames}`;
 
       setStatusRef.current(reconnectAttempt === 0 ? 'connecting' : 'reconnecting');
 
@@ -355,7 +358,10 @@ export function useKlineStream({
     const connect = () => {
       if (destroyed) return;
 
-      const url = `${BINANCE_FUTURES_WS}/ws/${symbol.toLowerCase()}@kline_${interval}`;
+      const wsPath = BINANCE_FUTURES_WS.includes('/stream')
+        ? BINANCE_FUTURES_WS
+        : `${BINANCE_FUTURES_WS}/market/stream`;
+      const url = `${wsPath}?streams=${symbol.toLowerCase()}@kline_${interval}`;
       setStatusRef.current(reconnectAttempt === 0 ? 'connecting' : 'reconnecting');
 
       let socket: WebSocket;
@@ -378,12 +384,14 @@ export function useKlineStream({
       socket.onmessage = (event: MessageEvent) => {
         if (destroyed || socket !== ws) return;
         try {
-          const msg = JSON.parse(event.data as string) as Record<string, unknown>;
+          const raw = JSON.parse(event.data as string) as Record<string, unknown>;
 
-          if (msg?.e === 'ping' || msg?.ping) {
-            socket.send(JSON.stringify({ pong: (msg.ping as number | undefined) ?? Date.now() }));
+          if (raw?.e === 'ping' || raw?.ping) {
+            socket.send(JSON.stringify({ pong: (raw.ping as number | undefined) ?? Date.now() }));
             return;
           }
+
+          const msg = (raw.data ?? raw) as Record<string, unknown>;
 
           if (msg?.e === 'kline') {
             const k = msg.k as Record<string, unknown>;

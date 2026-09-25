@@ -13,6 +13,7 @@ import { RiskWarningsPanel } from './components/RiskWarningsPanel';
 import { TradeJournalTable } from './components/TradeJournalTable';
 import { PredictionBacktestView } from './components/PredictionBacktestView';
 import { MarketAnalyzerWidget } from './components/MarketAnalyzerWidget';
+import { CryptoRealtimeMarketHub } from './components/CryptoRealtimeMarketHub';
 import type {
   CreateTradeRequest,
   EvaluateTradeResponse,
@@ -23,6 +24,7 @@ import type {
   ProposedTradeSetupDto
 } from './types/trade';
 import { useBinanceStream } from './context/BinanceStreamContext';
+import { formatDynamicPrice } from './utils/formatters';
 
 import { createTrade, evaluateTrade, getTrades, closeTrade } from './api/tradeApi';
 import { Zap, AlertCircle, BarChart2, Wifi, WifiOff, Radio } from 'lucide-react';
@@ -235,7 +237,7 @@ export function App() {
               {livePrice ? (
                 <>
                   <span className="text-xs font-bold text-cyan-400 font-mono">
-                    ${livePrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 4 })}
+                    ${formatDynamicPrice(livePrice)}
                   </span>
                   {changePct !== null && (
                     <span
@@ -296,7 +298,14 @@ export function App() {
 
               {/* Right Column: Chart & Score Overview */}
               <div className="flex flex-col gap-5 min-w-0">
-                {/* Candlestick Chart with Future Trajectory Corridor */}
+                {/* Unified Real-Time Market Hub (Coin Selector + Standalone WS Candlestick Chart + Depth & Order Book Details) */}
+                <CryptoRealtimeMarketHub
+                  initialSymbol={activeSymbol}
+                  initialTimeframe={activeTimeframe}
+                  onSymbolChange={(sym) => setActiveSymbol(sym)}
+                />
+
+                {/* Quantitative Trade Setup Trajectory Corridor (if evaluated) */}
                 <CandlestickChart
                   symbol={activeSymbol}
                   direction={activeDirection}

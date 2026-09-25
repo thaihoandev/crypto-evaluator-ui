@@ -22,6 +22,7 @@ import type {
 } from '../types/trade';
 import { analyzeMarket, getSymbols } from '../api/tradeApi';
 import { useLanguage } from '../context/LanguageContext';
+import { CryptoRealtimeMarketHub } from './CryptoRealtimeMarketHub';
 
 const FALLBACK_SYMBOLS: CryptoSymbolDto[] = [
   { symbol: 'BTCUSDT', name: 'Bitcoin' },
@@ -272,6 +273,13 @@ export const MarketAnalyzerWidget: React.FC<MarketAnalyzerWidgetProps> = ({
           </button>
         ))}
       </div>
+
+      {/* Unified Real-Time Market Hub (Coin Selector, Realtime Candlestick Chart, Order Book & Depth Details) */}
+      <CryptoRealtimeMarketHub
+        initialSymbol={symbol}
+        initialTimeframe={timeframe}
+        onSymbolChange={selectSymbol}
+      />
 
       {/* Error State */}
       {errorMessage && (

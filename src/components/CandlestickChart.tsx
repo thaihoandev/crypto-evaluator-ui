@@ -5,6 +5,19 @@ import { useLanguage } from '../context/LanguageContext';
 import { useKlineStream, timeframeToKlineInterval } from '../hooks/useBinanceWebSocket';
 import { formatDynamicPrice } from '../utils/formatters';
 
+// ── Module-level kline cache (shared across all CandlestickChart instances) ──
+// Avoids hitting Binance REST on every parent re-render. TTL matches ~80% of
+// the candle duration so data is refreshed before the next candle closes.
+interface KlineCacheEntry { candles: CandleDto[]; expiresAt: number; }
+const klineCache = new Map<string, KlineCacheEntry>();
+const KLINE_CACHE_TTL: Record<string, number> = {
+  '1m': 48_000, '3m': 144_000, '5m': 240_000, '15m': 720_000,
+  '30m': 1_440_000, '1h': 2_880_000, '2h': 5_760_000,
+  '4h': 11_520_000, '1d': 69_120_000,
+};
+const DEFAULT_TTL_MS = 120_000; // 2 min fallback
+
+
 interface CandlestickChartProps {
   symbol: string;
   direction: TradeDirection;
@@ -64,10 +77,25 @@ export const CandlestickChart: React.FC<CandlestickChartProps> = ({
 
   const [liveCandles, setLiveCandles] = useState<CandleDto[]>(candles);
 
-  // Sync when initial/analyzed candles prop changes or fetch from Binance REST if empty
+  // Sync when initial/analyzed candles prop changes or fetch from Binance REST if empty.
+  // IMPORTANT: dependency array uses only [symbol, klineInterval] — NOT [candles] — to avoid
+  // re-fetching on every parent re-render that creates a new array reference.
+  // The 'candles' prop is read inside the effect via a ref to avoid stale-closure issues.
+  const candlesPropRef = useRef(candles);
+  candlesPropRef.current = candles;
+
   useEffect(() => {
-    if (candles && candles.length > 0) {
-      setLiveCandles(candles);
+    // If parent already supplied candles, just sync them — no network call needed.
+    if (candlesPropRef.current && candlesPropRef.current.length > 0) {
+      setLiveCandles(candlesPropRef.current);
+      return;
+    }
+
+    // Check module-level cache first.
+    const cacheKey = `${symbol.toUpperCase()}:${klineInterval}`;
+    const cached = klineCache.get(cacheKey);
+    if (cached && Date.now() < cached.expiresAt) {
+      setLiveCandles(cached.candles);
       return;
     }
 
@@ -91,7 +119,10 @@ export const CandlestickChart: React.FC<CandlestickChartProps> = ({
         }));
 
         if (mapped.length > 0) {
-          setLiveCandles(mapped);
+          // Store in module-level cache with TTL.
+          const ttl = KLINE_CACHE_TTL[klineInterval] ?? DEFAULT_TTL_MS;
+          klineCache.set(cacheKey, { candles: mapped, expiresAt: Date.now() + ttl });
+          if (!isCancelled) setLiveCandles(mapped);
         }
       } catch {
         // Fallback fetch silent
@@ -103,7 +134,9 @@ export const CandlestickChart: React.FC<CandlestickChartProps> = ({
     return () => {
       isCancelled = true;
     };
-  }, [candles, symbol, timeframe, klineInterval]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [symbol, klineInterval]); // intentionally exclude 'candles' & 'timeframe' — handled via ref
+
 
   // Merge Binance WebSocket realtime tick updates into liveCandles
   useEffect(() => {

@@ -14,6 +14,20 @@ import { useBinanceStream } from '../context/BinanceStreamContext';
 import type { Timeframe, CandleDto } from '../types/trade';
 import { formatDynamicPrice } from '../utils/formatters';
 
+// ── Module-level kline cache (shared with CandlestickChart) ──
+// Stores fetched candle arrays keyed by "SYMBOL:interval" with a TTL of ~80%
+// of the candle timeframe. Prevents repeated Binance REST calls when the user
+// switches symbols and comes back, or when React strict-mode double-mounts.
+interface RtKlineCacheEntry { candles: CandleDto[]; expiresAt: number; }
+const rtKlineCache = new Map<string, RtKlineCacheEntry>();
+const RT_KLINE_CACHE_TTL: Record<string, number> = {
+  '1m': 48_000, '3m': 144_000, '5m': 240_000, '15m': 720_000,
+  '30m': 1_440_000, '1h': 2_880_000, '2h': 5_760_000,
+  '4h': 11_520_000, '1d': 69_120_000,
+};
+const RT_DEFAULT_TTL_MS = 120_000;
+
+
 interface RealtimeCandlestickChartProps {
   symbol: string;
   timeframe?: Timeframe;
@@ -75,6 +89,14 @@ export const RealtimeCandlestickChart: React.FC<RealtimeCandlestickChartProps> =
     setIsLoading(true);
     setPanOffset(0);
 
+    const cacheKey = `${symbol.toUpperCase().trim()}:${klineInterval}`;
+    const cached = rtKlineCache.get(cacheKey);
+    if (cached && Date.now() < cached.expiresAt) {
+      setCandles(cached.candles);
+      setIsLoading(false);
+      return;
+    }
+
     const fetchHistory = async () => {
       try {
         const binanceSymbol = symbol.toUpperCase().trim();
@@ -94,7 +116,9 @@ export const RealtimeCandlestickChart: React.FC<RealtimeCandlestickChartProps> =
         }));
 
         if (mapped.length > 0) {
-          setCandles(mapped);
+          const ttl = RT_KLINE_CACHE_TTL[klineInterval] ?? RT_DEFAULT_TTL_MS;
+          rtKlineCache.set(cacheKey, { candles: mapped, expiresAt: Date.now() + ttl });
+          if (!isCancelled) setCandles(mapped);
         }
       } catch {
         // Fallback silent
@@ -109,6 +133,7 @@ export const RealtimeCandlestickChart: React.FC<RealtimeCandlestickChartProps> =
       isCancelled = true;
     };
   }, [symbol, klineInterval]);
+
 
   // 2. Merge real-time WebSocket ticks into the latest open candle
   useEffect(() => {

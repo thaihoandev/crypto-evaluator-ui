@@ -22,9 +22,10 @@ import type {
   Timeframe,
   ProposedTradeSetupDto
 } from './types/trade';
+import { useBinanceStream } from './context/BinanceStreamContext';
 
-import { createTrade, evaluateTrade, getTrades, closeTrade, getTicker } from './api/tradeApi';
-import { Zap, AlertCircle, BarChart2 } from 'lucide-react';
+import { createTrade, evaluateTrade, getTrades, closeTrade } from './api/tradeApi';
+import { Zap, AlertCircle, BarChart2, Wifi, WifiOff, Radio } from 'lucide-react';
 
 const TOP_TICKERS = [
   { symbol: 'BTCUSDT', name: 'BTC/USDT' },
@@ -34,6 +35,14 @@ const TOP_TICKERS = [
   { symbol: 'XRPUSDT', name: 'XRP/USDT' },
   { symbol: 'NEARUSDT', name: 'NEAR/USDT' }
 ];
+
+/** Map WS status → color + label for the status dot in the ticker bar */
+const WS_STATUS_UI = {
+  connected:    { color: '#10b981', pulse: true,  label: 'LIVE',         icon: Radio },
+  connecting:   { color: '#f59e0b', pulse: true,  label: 'CONNECTING',   icon: Wifi },
+  reconnecting: { color: '#f59e0b', pulse: true,  label: 'RECONNECTING', icon: Wifi },
+  disconnected: { color: '#f43f5e', pulse: false, label: 'DISCONNECTED', icon: WifiOff },
+} as const;
 
 export function App() {
   const [activeTab, setActiveTab] = useState<WorkspaceTab>('terminal');
@@ -49,34 +58,17 @@ export function App() {
   const [activeStopLoss, setActiveStopLoss] = useState<number>(102500);
   const [activeTakeProfit, setActiveTakeProfit] = useState<number>(108500);
 
-  const [tickerPrices, setTickerPrices] = useState<Record<string, number>>({});
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  // Load trade journal on mount and poll top tickers every 4s
+  // ── Real-time Binance WebSocket ticker data ──────────────────────────────
+  // Replaces polling: data now streams directly from Binance Futures WS
+  const { tickers: wsTickers, wsStatus, getPrice } = useBinanceStream();
+
+  // Load trade journal on mount (no more ticker polling needed)
   useEffect(() => {
     loadTradeJournal();
-    pollTickers();
-
-    const tickerInterval = setInterval(() => {
-      pollTickers();
-    }, 4000);
-
-    return () => clearInterval(tickerInterval);
   }, []);
-
-  const pollTickers = async () => {
-    for (const t of TOP_TICKERS) {
-      try {
-        const data = await getTicker(t.symbol);
-        if (data && data.price > 0) {
-          setTickerPrices((prev) => ({ ...prev, [t.symbol]: data.price }));
-        }
-      } catch {
-        // Silent catch for background ticker refresh
-      }
-    }
-  };
 
   const loadTradeJournal = async () => {
     try {
@@ -201,13 +193,31 @@ export function App() {
         journalCount={tradeJournal.length}
       />
 
-      {/* Top Ticker Marquee */}
+      {/* Top Ticker Marquee — powered by Binance WS stream */}
       <div className="flex items-center gap-3 bg-slate-950/90 border-b border-slate-800/80 px-4 py-2 text-xs overflow-x-auto shrink-0 shadow-inner">
-        <span className="font-extrabold text-slate-400 uppercase tracking-wider text-[11px] shrink-0">
-          LIVE FUTURES TICKERS:
-        </span>
+        {/* WS Status indicator */}
+        {(() => {
+          const ui = WS_STATUS_UI[wsStatus];
+          const StatusIcon = ui.icon;
+          return (
+            <div className="flex items-center gap-1.5 shrink-0">
+              <span
+                className={`inline-block w-1.5 h-1.5 rounded-full ${ui.pulse ? 'animate-pulse' : ''}`}
+                style={{ backgroundColor: ui.color }}
+              />
+              <StatusIcon size={11} style={{ color: ui.color }} />
+              <span className="font-extrabold text-slate-400 uppercase tracking-wider text-[10px]">
+                {ui.label} FUTURES:
+              </span>
+            </div>
+          );
+        })()}
+
         {TOP_TICKERS.map((t) => {
-          const livePrice = tickerPrices[t.symbol];
+          const ticker = wsTickers[t.symbol];
+          const livePrice = ticker?.price ?? getPrice(t.symbol);
+          const changePct = ticker?.priceChangePct ?? null;
+          const isPositive = changePct !== null && changePct >= 0;
           return (
             <motion.div
               key={t.symbol}
@@ -223,11 +233,21 @@ export function App() {
             >
               <span className="font-extrabold text-slate-200 text-xs">{t.name}</span>
               {livePrice ? (
-                <span className="text-xs font-bold text-cyan-400 font-mono">
-                  ${livePrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 4 })}
-                </span>
+                <>
+                  <span className="text-xs font-bold text-cyan-400 font-mono">
+                    ${livePrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 4 })}
+                  </span>
+                  {changePct !== null && (
+                    <span
+                      className="text-[10px] font-bold font-mono"
+                      style={{ color: isPositive ? '#10b981' : '#f43f5e' }}
+                    >
+                      {isPositive ? '+' : ''}{changePct.toFixed(2)}%
+                    </span>
+                  )}
+                </>
               ) : (
-                <span className="text-[11px] font-semibold text-cyan-400 animate-pulse">● Live</span>
+                <span className="text-[11px] font-semibold text-cyan-400 animate-pulse">● Connecting</span>
               )}
             </motion.div>
           );

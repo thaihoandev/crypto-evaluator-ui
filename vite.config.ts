@@ -11,8 +11,10 @@ export default defineConfig({
       '/api': {
         target: 'https://localhost:7118',
         changeOrigin: true,
-        secure: false // Allows proxying to HTTPS localhost dev certificate
+        secure: false, // Allows proxying to HTTPS localhost dev certificate
+        ws: false,     // Do NOT proxy WebSocket upgrades — Binance WS connects directly
       }
     }
   }
 });
+

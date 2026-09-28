@@ -140,3 +140,18 @@ export async function analyzeMarket(symbol: string, timeframe: Timeframe = 'H1')
   return res.json();
 }
 
+export async function getWalkForwardBacktest(symbol: string = 'BTCUSDT', timeframe: string = 'H1', trainSize: number = 200, testHorizon: number = 50): Promise<import('../types/trade').WalkForwardReportDto> {
+  const url = new URL(`${API_BASE}/predictions/walk-forward`);
+  url.searchParams.set('symbol', symbol);
+  url.searchParams.set('timeframe', timeframe);
+  url.searchParams.set('trainSize', trainSize.toString());
+  url.searchParams.set('testHorizon', testHorizon.toString());
+
+  const res = await fetch(url.toString());
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw new Error(errorData.message || `Failed to run walk-forward backtest for ${symbol}`);
+  }
+  return res.json();
+}
+

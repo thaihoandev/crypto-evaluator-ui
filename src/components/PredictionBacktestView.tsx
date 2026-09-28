@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { getPredictionBacktest } from '../api/tradeApi';
-import type { PredictionBacktestReportDto } from '../types/trade';
+import { getPredictionBacktest, getWalkForwardBacktest } from '../api/tradeApi';
+import type { PredictionBacktestReportDto, WalkForwardReportDto } from '../types/trade';
 import {
   FlaskConical,
   Calendar,
@@ -13,7 +13,8 @@ import {
   BarChart3,
   Layers,
   ShieldCheck,
-  Target
+  Target,
+  Play
 } from 'lucide-react';
 
 export const PredictionBacktestView: React.FC = () => {
@@ -23,6 +24,23 @@ export const PredictionBacktestView: React.FC = () => {
   const [report, setReport] = useState<PredictionBacktestReportDto | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Walk-Forward Backtest state
+  const [wfSymbol, setWfSymbol] = useState<string>('BTCUSDT');
+  const [wfReport, setWfReport] = useState<WalkForwardReportDto | null>(null);
+  const [wfLoading, setWfLoading] = useState<boolean>(false);
+
+  const runWalkForward = async (sym: string = wfSymbol) => {
+    setWfLoading(true);
+    try {
+      const data = await getWalkForwardBacktest(sym, 'H1', 200, 50);
+      setWfReport(data);
+    } catch (err: any) {
+      console.error('Walk-Forward error:', err);
+    } finally {
+      setWfLoading(false);
+    }
+  };
 
   const fetchBacktest = async () => {
     setLoading(true);
@@ -42,6 +60,7 @@ export const PredictionBacktestView: React.FC = () => {
 
   useEffect(() => {
     fetchBacktest();
+    runWalkForward('BTCUSDT');
   }, []);
 
   const handleApplyFilter = (e: React.FormEvent) => {
@@ -327,6 +346,60 @@ export const PredictionBacktestView: React.FC = () => {
                     </div>
                   );
                 })}
+              </div>
+            )}
+          </div>
+
+          {/* §6 Extension: Walk-Forward Rolling Window Backtest Panel */}
+          <div className="glass-panel p-5 rounded-2xl shadow-xl border border-slate-800/80 space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800/60 pb-3">
+              <div className="flex items-center gap-2 text-slate-200 font-heading font-bold text-sm">
+                <Target size={18} className="text-emerald-400 shrink-0" />
+                <span>Walk-Forward Rolling Backtest Engine (§6 Spec Extension)</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <select
+                  value={wfSymbol}
+                  onChange={(e) => {
+                    setWfSymbol(e.target.value);
+                    runWalkForward(e.target.value);
+                  }}
+                  className="bg-slate-900 border border-slate-700 text-xs text-slate-200 rounded-lg px-2.5 py-1.5 font-mono outline-none"
+                >
+                  <option value="BTCUSDT">BTCUSDT</option>
+                  <option value="ETHUSDT">ETHUSDT</option>
+                  <option value="SOLUSDT">SOLUSDT</option>
+                  <option value="BNBUSDT">BNBUSDT</option>
+                </select>
+                <button
+                  onClick={() => runWalkForward(wfSymbol)}
+                  disabled={wfLoading}
+                  className="flex items-center gap-1.5 bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 text-emerald-400 text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50"
+                >
+                  {wfLoading ? <RefreshCw size={13} className="animate-spin" /> : <Play size={13} />}
+                  <span>Run Rolling Test</span>
+                </button>
+              </div>
+            </div>
+
+            {wfReport && (
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div className="bg-slate-950/80 border border-slate-800/80 rounded-xl p-3">
+                  <div className="text-[11px] text-slate-400 font-medium">Rolling Windows</div>
+                  <div className="text-lg font-mono font-black text-slate-100 mt-1">{wfReport.totalWindows}</div>
+                </div>
+                <div className="bg-slate-950/80 border border-slate-800/80 rounded-xl p-3">
+                  <div className="text-[11px] text-slate-400 font-medium">Walk-Forward Accuracy</div>
+                  <div className="text-lg font-mono font-black text-emerald-400 mt-1">{wfReport.walkForwardAccuracy}%</div>
+                </div>
+                <div className="bg-slate-950/80 border border-slate-800/80 rounded-xl p-3">
+                  <div className="text-[11px] text-slate-400 font-medium">Predicted Win Rate Avg</div>
+                  <div className="text-lg font-mono font-black text-amber-400 mt-1">{wfReport.predictedWinRateAvg}%</div>
+                </div>
+                <div className="bg-slate-950/80 border border-slate-800/80 rounded-xl p-3">
+                  <div className="text-[11px] text-slate-400 font-medium">Actual Win Rate Avg</div>
+                  <div className="text-lg font-mono font-black text-cyan-400 mt-1">{wfReport.actualWinRateAvg}%</div>
+                </div>
               </div>
             )}
           </div>

@@ -78,16 +78,9 @@ export const CandlestickChart: React.FC<CandlestickChartProps> = ({
   const [liveCandles, setLiveCandles] = useState<CandleDto[]>(candles);
 
   // Sync when initial/analyzed candles prop changes or fetch from Binance REST if empty.
-  // IMPORTANT: dependency array uses only [symbol, klineInterval] — NOT [candles] — to avoid
-  // re-fetching on every parent re-render that creates a new array reference.
-  // The 'candles' prop is read inside the effect via a ref to avoid stale-closure issues.
-  const candlesPropRef = useRef(candles);
-  candlesPropRef.current = candles;
-
   useEffect(() => {
-    // If parent already supplied candles, just sync them — no network call needed.
-    if (candlesPropRef.current && candlesPropRef.current.length > 0) {
-      setLiveCandles(candlesPropRef.current);
+    if (candles && candles.length > 0) {
+      setLiveCandles(candles);
       return;
     }
 
@@ -134,8 +127,7 @@ export const CandlestickChart: React.FC<CandlestickChartProps> = ({
     return () => {
       isCancelled = true;
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [symbol, klineInterval]); // intentionally exclude 'candles' & 'timeframe' — handled via ref
+  }, [symbol, klineInterval, candles]); // intentionally exclude 'candles' & 'timeframe' — handled via ref
 
 
   // Merge Binance WebSocket realtime tick updates into liveCandles
@@ -259,11 +251,24 @@ export const CandlestickChart: React.FC<CandlestickChartProps> = ({
     return ticks;
   }, [maxPrice, priceRange]);
 
-  // ─── Proportional Candle Scaling ────────────────────────────────
+  // ─── Proportional Candle Scaling & Trajectory Alignment ──────────
   const totalCandles = liveCandles ? liveCandles.length : 0;
   const totalSlots   = (totalCandles > 0 ? totalCandles : 60) + PROJECTION_CANDLE_COUNT;
   const slotWidth    = CANDLE_AREA_RIGHT / totalSlots;
-  const startX       = totalCandles * slotWidth;
+
+  // Anchor trajectory to the exact candle index corresponding to evaluation time, or default to last candle center
+  const evalCandleIndex = useMemo(() => {
+    if (!liveCandles || liveCandles.length === 0) return 0;
+    const points = prediction?.trajectoryPoints;
+    if (points && points[0]?.timestamp) {
+      const evalTs = new Date(points[0].timestamp).getTime();
+      const idx = liveCandles.findIndex((c) => Math.abs(new Date(c.openTime).getTime() - evalTs) < 60_000);
+      if (idx >= 0) return idx;
+    }
+    return liveCandles.length - 1;
+  }, [liveCandles, prediction]);
+
+  const startX = totalCandles > 0 ? (evalCandleIndex + 0.5) * slotWidth : 0;
 
   // ─── Backend Calculated Trajectory Points Mapping ───────────────
   const backendTrajectory = useMemo(() => {
@@ -426,20 +431,20 @@ export const CandlestickChart: React.FC<CandlestickChartProps> = ({
       return `${h}:${m}`;
     };
 
-    if (candles && candles.length > 0) {
-      const step = Math.max(1, Math.floor(candles.length / 4));
-      for (let i = 0; i < candles.length - 1; i += step) {
+    if (liveCandles && liveCandles.length > 0) {
+      const step = Math.max(1, Math.floor(liveCandles.length / 4));
+      for (let i = 0; i < liveCandles.length - 1; i += step) {
         const x = (i + 0.5) * slotWidth;
         ticks.push({
           x,
-          label: formatTimeLabel(candles[i].openTime, timeframe),
+          label: formatTimeLabel(liveCandles[i].openTime, timeframe),
           isProjection: false
         });
       }
 
-      const lastCandle = candles[candles.length - 1];
+      const lastCandle = liveCandles[liveCandles.length - 1];
       ticks.push({
-        x: startX,
+        x: (liveCandles.length - 0.5) * slotWidth,
         label: formatTimeLabel(lastCandle.openTime, timeframe),
         isProjection: false
       });

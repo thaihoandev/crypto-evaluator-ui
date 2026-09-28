@@ -43,10 +43,13 @@ export const RiskWarningsPanel: React.FC<RiskWarningsPanelProps> = ({ warnings }
       <div className="space-y-2.5">
         {warnings.map((w, index) => {
           const isCritical = w.severity === 'Critical';
-          const isWarning = w.severity === 'Warning';
+          const isDanger   = w.severity === 'Danger';
+          const isWarning  = w.severity === 'Warning';
 
           const bgClass = isCritical
             ? 'bg-rose-500/10 border-rose-500/30 text-rose-300'
+            : isDanger
+            ? 'bg-orange-500/10 border-orange-500/30 text-orange-300'
             : isWarning
             ? 'bg-amber-500/10 border-amber-500/30 text-amber-300'
             : 'bg-blue-500/10 border-blue-500/30 text-blue-300';
@@ -59,6 +62,8 @@ export const RiskWarningsPanel: React.FC<RiskWarningsPanelProps> = ({ warnings }
               <div className="mt-0.5 shrink-0">
                 {isCritical ? (
                   <AlertOctagon size={18} className="text-rose-400" />
+                ) : isDanger ? (
+                  <AlertOctagon size={18} className="text-orange-400" />
                 ) : isWarning ? (
                   <AlertTriangle size={18} className="text-amber-400" />
                 ) : (

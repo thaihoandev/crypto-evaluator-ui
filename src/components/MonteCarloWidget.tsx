@@ -35,6 +35,10 @@ export const MonteCarloWidget: React.FC<MonteCarloWidgetProps> = ({ prediction }
   const expectedR = prediction?.expectedRMultiple ?? 0;
   const conf   = prediction?.confidence;
   const dq     = prediction?.dataQuality;
+  // §6 Bootstrap CI
+  const ciLower = prediction?.bootstrapCiLower;
+  const ciUpper = prediction?.bootstrapCiUpper;
+  const hasCi   = ciLower !== undefined && ciUpper !== undefined;
 
   const confStyle = conf ? CONFIDENCE_COLORS[conf.level] ?? CONFIDENCE_COLORS.Low : null;
 
@@ -93,6 +97,18 @@ export const MonteCarloWidget: React.FC<MonteCarloWidgetProps> = ({ prediction }
             <TrendingUp size={13} />
             <span>E[R]: {expectedR >= 0 ? '+' : ''}{expectedR.toFixed(2)}R</span>
           </div>
+
+          {/* §6 Bootstrap CI Badge */}
+          {hasCi && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="flex items-center gap-1 bg-indigo-500/10 text-indigo-300 border border-indigo-500/30 px-2 py-1 rounded-lg text-[10px] font-mono font-black"
+              title="95% Bootstrap Confidence Interval for E[R]"
+            >
+              <span>CIₚ₅: [{ciLower! >= 0 ? '+' : ''}{ciLower!.toFixed(2)}, {ciUpper! >= 0 ? '+' : ''}{ciUpper!.toFixed(2)}]R</span>
+            </motion.div>
+          )}
         </div>
       </div>
 

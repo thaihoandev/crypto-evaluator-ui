@@ -11,7 +11,7 @@ export type ScoreCategory =
   | 'Volatility'
   | 'MarketContext';
 
-export type WarningSeverity = 'Info' | 'Warning' | 'Critical';
+export type WarningSeverity = 'Info' | 'Warning' | 'Danger' | 'Critical';
 
 export interface CreateTradeRequest {
   userId?: string;
@@ -119,6 +119,9 @@ export interface TradePredictionDto {
   scenarioPaths?: ScenarioPathDto[];
   dataQuality?: PredictionDataQualityDto;
   confidence?: PredictionConfidenceDto;
+  // §6 Bootstrap CI: 95% confidence interval for E[R]
+  bootstrapCiLower?: number;
+  bootstrapCiUpper?: number;
 }
 
 export interface TradeWarning {
@@ -142,6 +145,8 @@ export interface EvaluateTradeResponse {
   warnings: TradeWarning[];
   explanation: string;
   candles?: CandleDto[];
+  // §10 Kelly Fraction suggestion (quarter-Kelly, read-only reference)
+  kellyFractionSuggested?: number;
 }
 
 export interface CloseTradeRequest {
@@ -225,5 +230,14 @@ export interface MarketAnalysisResponseDto {
   longSetup: ProposedTradeSetupDto;
   shortSetup: ProposedTradeSetupDto;
   disclaimer: string;
+}
+
+export interface WalkForwardReportDto {
+  symbol: string;
+  totalWindows: number;
+  walkForwardAccuracy: number;
+  averageBrierScore: number;
+  predictedWinRateAvg: number;
+  actualWinRateAvg: number;
 }
 

@@ -347,7 +347,7 @@ export const translations: Record<Language, TranslationDictionary> = {
       readyTitle: 'Sẵn Sàng Đánh Giá Setup Giao Dịch',
       readyDesc: 'Chọn cặp Crypto từ danh sách tìm kiếm bên trái hoặc bấm lấy giá thời gian thực. Nhấn ĐÁNH GIÁ SETUP GIAO DỊCH để kích hoạt thuật toán phân tích định lượng.',
       evalErrorTitle: 'Lỗi Đánh Giá:',
-      footer: 'Crypto Trade Evaluator © 2026. ASP.NET Core Clean Architecture & Vite React Trading Terminal.'
+      footer: 'HAWK Pulse © 2026. ASP.NET Core Clean Architecture & Vite React Trading Terminal.'
     }
   },
 
@@ -522,7 +522,7 @@ export const translations: Record<Language, TranslationDictionary> = {
       readyTitle: 'Ready to Evaluate Trade Setup',
       readyDesc: 'Select a Crypto pair using the Search Dropdown on the left or fetch live market price. Click EVALUATE TRADE SETUP to trigger quantitative score engine.',
       evalErrorTitle: 'Evaluation Error:',
-      footer: 'Crypto Trade Evaluator © 2026. ASP.NET Core Clean Architecture & Vite React Trading Terminal.'
+      footer: 'HAWK Pulse © 2026. ASP.NET Core Clean Architecture & Vite React Trading Terminal.'
     }
   }
 };

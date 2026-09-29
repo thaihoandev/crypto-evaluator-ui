@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Activity, ShieldCheck, Cpu, LayoutDashboard, Target, BookOpen, FlaskConical, Sparkles, Languages } from 'lucide-react';
+import { Activity, ShieldCheck, LayoutDashboard, Target, BookOpen, FlaskConical, Sparkles, Languages } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 
 export type WorkspaceTab = 'terminal' | 'analyzer' | 'inspector' | 'backtest' | 'journal';
@@ -30,9 +30,9 @@ export const Navbar: React.FC<NavbarProps> = ({
 
   return (
     <header className="sticky top-0 z-50 border-b border-slate-800/80 bg-[#06080e]/90 backdrop-blur-2xl shadow-xl">
-      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 py-2.5 flex flex-col lg:flex-row items-center justify-between gap-3">
+      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 py-2.5 flex flex-col xl:flex-row items-center justify-between gap-3">
         {/* Brand Logo & Mobile Language Controls */}
-        <div className="flex items-center justify-between w-full lg:w-auto">
+        <div className="flex items-center justify-between w-full xl:w-auto xl:flex-1 xl:justify-start shrink-0">
           <motion.div
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
@@ -41,11 +41,11 @@ export const Navbar: React.FC<NavbarProps> = ({
           >
             <div className="relative">
               <motion.div
-                animate={{ rotate: [0, 10, -10, 0] }}
+                animate={{ rotate: [0, 5, -5, 0] }}
                 transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
-                className="bg-gradient-to-tr from-cyan-500 via-blue-600 to-indigo-600 p-2.5 rounded-xl shadow-lg shadow-cyan-500/25 group-hover:shadow-cyan-500/40 transition-shadow"
+                className="bg-slate-900/90 border border-cyan-500/30 p-2 rounded-xl shadow-lg shadow-cyan-500/20 group-hover:border-cyan-400 group-hover:shadow-cyan-500/40 transition-all flex items-center justify-center w-10 h-10 shrink-0"
               >
-                <Cpu size={22} className="text-white" />
+                <img src="/favicon.svg" alt="HAWK Pulse Logo" className="w-6 h-6 object-contain drop-shadow-md" />
               </motion.div>
               <span className="absolute -top-1 -right-1 flex h-3 w-3">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
@@ -56,7 +56,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             <div>
               <div className="flex items-center gap-2">
                 <h1 className="font-heading text-lg sm:text-xl font-black tracking-tight text-white flex items-center gap-1.5">
-                  Crypto Trade <span className="gradient-text-cyan">Evaluator</span>
+                  HAWK <span className="gradient-text-cyan">Pulse</span>
                 </h1>
                 <span className="bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 text-[10px] font-extrabold px-1.5 py-0.5 rounded-full uppercase tracking-wider">
                   v2.5
@@ -69,7 +69,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           </motion.div>
 
           {/* Mobile Language Switcher */}
-          <div className="flex lg:hidden items-center bg-slate-900/90 border border-slate-800 p-0.5 rounded-full text-xs font-mono">
+          <div className="flex xl:hidden items-center bg-slate-900/90 border border-slate-800 p-0.5 rounded-full text-xs font-mono">
             <button
               type="button"
               onClick={() => setLanguage('vi')}
@@ -88,45 +88,47 @@ export const Navbar: React.FC<NavbarProps> = ({
         </div>
 
         {/* Center Navigation Tabs */}
-        <div className="flex items-center gap-1.5 bg-slate-950/80 border border-slate-800/80 p-1 rounded-xl max-w-full overflow-x-auto scrollbar-none w-full lg:w-auto justify-start lg:justify-center shadow-inner">
-          {tabs.map((tab) => {
-            const Icon = tab.icon;
-            const isActive = activeTab === tab.id;
-            return (
-              <button
-                key={tab.id}
-                type="button"
-                className={`relative px-3.5 py-2 rounded-lg text-xs font-bold transition-all whitespace-nowrap outline-none flex items-center gap-2 cursor-pointer ${isActive ? 'text-cyan-300 font-black' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/50'}`}
-                onClick={() => setActiveTab(tab.id as WorkspaceTab)}
-              >
-                {isActive && (
-                  <motion.div
-                    layoutId="activeTabPill"
-                    transition={{ type: 'spring', stiffness: 450, damping: 35 }}
-                    className="absolute inset-0 bg-cyan-500/15 border border-cyan-500/40 rounded-lg shadow-sm shadow-cyan-500/20 z-0"
-                  />
-                )}
-                <span className="relative z-10 flex items-center gap-2">
-                  <Icon size={16} className={isActive ? 'text-cyan-400' : 'text-slate-400'} />
-                  {tab.label}
-                  {tab.badge && (
-                    <span className="bg-purple-500/20 text-purple-300 border border-purple-500/40 text-[9px] font-extrabold px-1.5 py-0.2 rounded-full">
-                      {tab.badge}
-                    </span>
+        <div className="flex items-center justify-center max-w-full">
+          <div className="flex items-center gap-1.5 bg-slate-950/80 border border-slate-800/80 p-1.5 px-2.5 rounded-xl max-w-full overflow-x-auto scrollbar-none shrink-0 justify-start lg:justify-center shadow-inner">
+            {tabs.map((tab) => {
+              const Icon = tab.icon;
+              const isActive = activeTab === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  type="button"
+                  className={`relative px-3.5 py-2 rounded-lg text-xs font-bold transition-all whitespace-nowrap outline-none flex items-center gap-2 cursor-pointer shrink-0 ${isActive ? 'text-cyan-300 font-black' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/50'}`}
+                  onClick={() => setActiveTab(tab.id as WorkspaceTab)}
+                >
+                  {isActive && (
+                    <motion.div
+                      layoutId="activeTabPill"
+                      transition={{ type: 'spring', stiffness: 450, damping: 35 }}
+                      className="absolute inset-0 bg-cyan-500/15 border border-cyan-500/40 rounded-lg shadow-sm shadow-cyan-500/20 z-0"
+                    />
                   )}
-                  {tab.count !== undefined && (
-                    <span className={`text-[10px] font-extrabold px-1.5 py-0.2 rounded-full border ${isActive ? 'bg-cyan-500/20 border-cyan-400/40 text-cyan-300' : 'bg-slate-800 border-slate-700 text-slate-400'}`}>
-                      {tab.count}
-                    </span>
-                  )}
-                </span>
-              </button>
-            );
-          })}
+                  <span className="relative z-10 flex items-center gap-2">
+                    <Icon size={16} className={isActive ? 'text-cyan-400' : 'text-slate-400'} />
+                    {tab.label}
+                    {tab.badge && (
+                      <span className="bg-purple-500/20 text-purple-300 border border-purple-500/40 text-[9px] font-extrabold px-1.5 py-0.2 rounded-full">
+                        {tab.badge}
+                      </span>
+                    )}
+                    {tab.count !== undefined && (
+                      <span className={`text-[10px] font-extrabold px-1.5 py-0.2 rounded-full border ${isActive ? 'bg-cyan-500/20 border-cyan-400/40 text-cyan-300' : 'bg-slate-800 border-slate-700 text-slate-400'}`}>
+                        {tab.count}
+                      </span>
+                    )}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
         </div>
 
         {/* Right Status Indicators & Desktop Language Selector */}
-        <div className="hidden lg:flex items-center gap-2.5">
+        <div className="hidden xl:flex items-center justify-end gap-2.5 xl:flex-1 shrink-0">
           {/* Language Switcher */}
           <div className="flex items-center bg-slate-900/90 border border-slate-800/80 p-0.5 rounded-full font-mono">
             <div className="px-2 text-slate-500">
@@ -148,44 +150,63 @@ export const Navbar: React.FC<NavbarProps> = ({
             </button>
           </div>
 
-          {/* Engine Status Badge */}
-          <div className="flex items-center gap-1.5 bg-slate-900/90 border border-slate-800/80 px-3 py-1.5 rounded-full text-xs font-bold text-slate-300">
-            <ShieldCheck size={14} className="text-emerald-400" />
-            <span className="text-[11px] text-slate-400">{t.nav.engineReady}</span>
-          </div>
-
-          {/* API Status Indicator */}
-          <motion.div
-            animate={apiStatus === 'online' ? { opacity: [0.8, 1, 0.8] } : {}}
-            transition={{ duration: 2, repeat: Infinity }}
-            className="flex items-center gap-1.5 bg-slate-900/90 border border-slate-800/80 px-3 py-1.5 rounded-full text-xs font-bold"
-          >
-            <Activity
-              size={14}
-              className={
-                apiStatus === 'online'
-                  ? 'text-emerald-400'
-                  : apiStatus === 'offline'
-                  ? 'text-rose-400'
-                  : 'text-amber-400 animate-spin'
-              }
-            />
-            <span
-              className={`text-[11px] font-bold ${
-                apiStatus === 'online'
-                  ? 'text-emerald-400'
-                  : apiStatus === 'offline'
-                  ? 'text-rose-400'
-                  : 'text-amber-400'
-              }`}
+          <div className="flex flex-col items-stretch gap-1.5 shrink-0">
+            {/* Engine Status Badge */}
+            <div
+              title={t.nav.engineReady}
+              className="flex items-center gap-1.5 bg-slate-900/90 border border-slate-800/80 px-2.5 py-1 rounded-full text-xs font-bold hover:border-slate-700 transition-colors cursor-help"
             >
-              {apiStatus === 'online'
-                ? t.nav.apiOnline
-                : apiStatus === 'offline'
-                ? t.nav.apiOffline
-                : t.nav.apiChecking}
-            </span>
-          </motion.div>
+              <ShieldCheck size={14} className="text-emerald-400" />
+              <span className="text-[10px] font-extrabold text-emerald-400 tracking-wider">
+                ENGINE OK
+              </span>
+            </div>
+
+            {/* API Status Indicator */}
+            <motion.div
+              title={
+                apiStatus === 'online'
+                  ? t.nav.apiOnline
+                  : apiStatus === 'offline'
+                    ? t.nav.apiOffline
+                    : t.nav.apiChecking
+              }
+              animate={apiStatus === 'online' ? { opacity: [0.8, 1, 0.8] } : {}}
+              transition={{ duration: 2, repeat: Infinity }}
+              className={`flex items-center gap-1.5 bg-slate-900/90 border px-2.5 py-1 rounded-full text-xs font-bold cursor-help transition-colors ${apiStatus === 'online'
+                  ? 'border-emerald-500/30'
+                  : apiStatus === 'offline'
+                    ? 'border-rose-500/30'
+                    : 'border-amber-500/30'
+                }`}
+            >
+              <Activity
+                size={14}
+                className={
+                  apiStatus === 'online'
+                    ? 'text-emerald-400'
+                    : apiStatus === 'offline'
+                      ? 'text-rose-400'
+                      : 'text-amber-400 animate-spin'
+                }
+              />
+
+              <span
+                className={`text-[10px] font-extrabold font-mono ${apiStatus === 'online'
+                    ? 'text-emerald-400'
+                    : apiStatus === 'offline'
+                      ? 'text-rose-400'
+                      : 'text-amber-400'
+                  }`}
+              >
+                {apiStatus === 'online'
+                  ? 'API ON'
+                  : apiStatus === 'offline'
+                    ? 'API OFF'
+                    : 'SYNC'}
+              </span>
+            </motion.div>
+          </div>
         </div>
       </div>
     </header>
